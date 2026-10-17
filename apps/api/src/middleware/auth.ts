@@ -21,6 +21,8 @@ export interface VerifiedIdentity {
   name?: string;
   /** Firebase `email_verified` claim. Dev tokens are always treated as verified. */
   emailVerified: boolean;
+  /** Firebase `firebase.sign_in_provider` claim, e.g. 'google.com'. Unset for dev tokens. */
+  signInProvider?: string;
 }
 
 export interface TokenVerifier {
@@ -32,7 +34,10 @@ const DEV_ISSUER = 'chatpilot-dev';
 
 /** Firebase ID tokens, verified with revocation check. The uid comes ONLY from the verified token. */
 export function firebaseVerifier(auth: {
-  verifyIdToken(token: string, checkRevoked?: boolean): Promise<{ uid: string; email?: string; name?: string; email_verified?: boolean }>;
+  verifyIdToken(
+    token: string,
+    checkRevoked?: boolean,
+  ): Promise<{ uid: string; email?: string; name?: string; email_verified?: boolean; firebase?: { sign_in_provider?: string } }>;
 }): TokenVerifier {
   return {
     mode: 'firebase',
@@ -40,7 +45,13 @@ export function firebaseVerifier(auth: {
       const decoded = await auth.verifyIdToken(token, true);
       // Google and other OAuth providers set email_verified=true; email/password users only after
       // clicking the verification link (and refreshing their ID token).
-      return { uid: decoded.uid, email: decoded.email ?? '', name: decoded.name, emailVerified: decoded.email_verified === true };
+      return {
+        uid: decoded.uid,
+        email: decoded.email ?? '',
+        name: decoded.name,
+        emailVerified: decoded.email_verified === true,
+        signInProvider: decoded.firebase?.sign_in_provider,
+      };
     },
   };
 }
@@ -71,6 +82,15 @@ export async function signDevToken(secret: string, email: string): Promise<{ tok
   return { token, uid, email: normalized };
 }
 
+/**
+ * Firebase sign-in providers the platform accepts. Owners sign in with Google only; 'custom' tokens
+ * can only be minted with the service account (smoke tests, admin tooling).
+ */
+export const ALLOWED_SIGN_IN_PROVIDERS = new Set(['google.com', 'custom']);
+
+export const googleSignInRequired = () =>
+  new AppError(403, 'google_sign_in_required', 'Please sign in with Google. Email and password sign-in is no longer supported.');
+
 export const emailNotVerified = () =>
   new AppError(403, 'email_not_verified', 'Please verify your email address before using your account. Check your inbox for the verification link.');
 
@@ -99,6 +119,7 @@ export function requireAuth(
       } catch {
         throw unauthorized('Your session is invalid or has expired. Please sign in again.');
       }
+      if (verifier.mode === 'firebase' && !ALLOWED_SIGN_IN_PROVIDERS.has(identity.signInProvider ?? '')) throw googleSignInRequired();
       if (!identity.emailVerified && !allowUnverified(req)) throw emailNotVerified();
       req.user = await users.ensureUser(identity.uid, identity.email, identity.name);
       next();

@@ -8,7 +8,7 @@ import { expect, type APIRequestContext, type Browser, type Locator, type Page }
  * roots, so the widget must use attachShadow({ mode: 'open' }).
  *
  * Dashboard (apps/web)
- *   /register                 label /email/i, label /^password/i, optional label /name/i,
+ *   /register (dev mode)      label /email/i, optional label /name/i (production: Google button only),
  *                             button /create account|sign up|get started/i
  *   /login                    button /sign in|log in/i
  *   new chatbot (/chatbots/new or onboarding)

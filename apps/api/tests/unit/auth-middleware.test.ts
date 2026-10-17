@@ -6,7 +6,7 @@ import { errorHandler } from '../../src/middleware/errorHandler';
 import { firebaseVerifier, requireAuth, type TokenVerifier } from '../../src/middleware/auth';
 import type { UserService } from '../../src/services/users';
 
-type Claims = { uid: string; email?: string; email_verified?: boolean };
+type Claims = { uid: string; email?: string; email_verified?: boolean; firebase?: { sign_in_provider?: string } };
 
 /** Firebase verifier over a fake verifyIdToken: the bearer token selects the decoded claims. */
 function makeApp(tokens: Record<string, Claims>) {
@@ -33,49 +33,56 @@ function makeApp(tokens: Record<string, Claims>) {
   return { agent: request(app), ensureUser };
 }
 
+const provider = (sign_in_provider: string) => ({ firebase: { sign_in_provider } });
 const tokens: Record<string, Claims> = {
-  unverified: { uid: 'pw-user', email: 'new@example.com', email_verified: false },
-  verified: { uid: 'pw-verified', email: 'ok@example.com', email_verified: true },
-  google: { uid: 'g-user', email: 'g@gmail.com', email_verified: true },
-  noClaim: { uid: 'odd-user', email: 'odd@example.com' },
+  google: { uid: 'g-user', email: 'g@gmail.com', email_verified: true, ...provider('google.com') },
+  password: { uid: 'pw-user', email: 'old@example.com', email_verified: true, ...provider('password') },
+  noProvider: { uid: 'odd-user', email: 'odd@example.com', email_verified: true },
+  customVerified: { uid: 'smoke-ok', email: 'smoke@example.com', email_verified: true, ...provider('custom') },
+  customUnverified: { uid: 'smoke-new', email: 'new@example.com', email_verified: false, ...provider('custom') },
+  customNoClaim: { uid: 'smoke-odd', email: 'odd2@example.com', ...provider('custom') },
 };
 const bearer = (t: string) => ({ Authorization: `Bearer ${t}` });
 
-describe('requireAuth email verification (firebase tokens)', () => {
-  it('rejects unverified email/password users on owner endpoints with 403 email_not_verified', async () => {
+describe('requireAuth sign-in provider (firebase tokens)', () => {
+  it('lets Google users use owner endpoints', async () => {
+    const { agent } = makeApp(tokens);
+    expect((await agent.get('/api/chatbots').set(bearer('google'))).status).toBe(200);
+    expect((await agent.post('/api/chatbots').set(bearer('google')).send({})).status).toBe(201);
+    expect((await agent.get('/api/me').set(bearer('google'))).status).toBe(200);
+  });
+
+  it('rejects email/password and provider-less tokens everywhere with 403 google_sign_in_required', async () => {
     const { agent, ensureUser } = makeApp(tokens);
-    for (const [method, path] of [
-      ['get', '/api/chatbots'],
-      ['post', '/api/chatbots'],
-      ['delete', '/api/me'],
-    ] as const) {
-      const res = await agent[method](path).set(bearer('unverified'));
-      expect(res.status, `${method} ${path}`).toBe(403);
-      expect(res.body.error.code).toBe('email_not_verified');
+    for (const token of ['password', 'noProvider']) {
+      for (const [method, path] of [
+        ['get', '/api/me'],
+        ['patch', '/api/me'],
+        ['get', '/api/chatbots'],
+        ['post', '/api/chatbots'],
+      ] as const) {
+        const res = await agent[method](path).set(bearer(token));
+        expect(res.status, `${token} ${method} ${path}`).toBe(403);
+        expect(res.body.error.code).toBe('google_sign_in_required');
+      }
     }
     // Rejected before a user record is created.
     expect(ensureUser).not.toHaveBeenCalled();
   });
 
-  it('treats a missing email_verified claim as unverified', async () => {
+  it('accepts service-account custom tokens (smoke tests)', async () => {
     const { agent } = makeApp(tokens);
-    const res = await agent.get('/api/chatbots').set(bearer('noClaim'));
-    expect(res.status).toBe(403);
-    expect(res.body.error.code).toBe('email_not_verified');
+    expect((await agent.get('/api/chatbots').set(bearer('customVerified'))).status).toBe(200);
   });
 
-  it('allows GET and PATCH /me for unverified users (sign-up / verify flow)', async () => {
+  it('still requires a verified email, treating a missing claim as unverified', async () => {
     const { agent } = makeApp(tokens);
-    expect((await agent.get('/api/me').set(bearer('unverified'))).status).toBe(200);
-    const patched = await agent.patch('/api/me').set(bearer('unverified')).send({ displayName: 'New' });
-    expect(patched.status).toBe(200);
-    expect(patched.body.uid).toBe('pw-user');
-  });
-
-  it('lets verified and Google users use owner endpoints', async () => {
-    const { agent } = makeApp(tokens);
-    expect((await agent.get('/api/chatbots').set(bearer('verified'))).status).toBe(200);
-    expect((await agent.post('/api/chatbots').set(bearer('google')).send({})).status).toBe(201);
+    for (const token of ['customUnverified', 'customNoClaim']) {
+      const res = await agent.get('/api/chatbots').set(bearer(token));
+      expect(res.status, token).toBe(403);
+      expect(res.body.error.code).toBe('email_not_verified');
+    }
+    expect((await agent.get('/api/me').set(bearer('customUnverified'))).status).toBe(200);
   });
 
   it('still returns 401 for missing or invalid tokens', async () => {

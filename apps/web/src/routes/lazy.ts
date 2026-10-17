@@ -18,8 +18,6 @@ export const NotFoundPage = lazyNamed(() => import('@/features/marketing/NotFoun
 /* ---------- Auth ---------- */
 export const LoginPage = lazyNamed(() => import('@/features/auth/LoginPage'), 'LoginPage');
 export const RegisterPage = lazyNamed(() => import('@/features/auth/RegisterPage'), 'RegisterPage');
-export const ForgotPasswordPage = lazyNamed(() => import('@/features/auth/ForgotPasswordPage'), 'ForgotPasswordPage');
-export const VerifyEmailPage = lazyNamed(() => import('@/features/auth/VerifyEmailPage'), 'VerifyEmailPage');
 
 /* ---------- App ---------- */
 export const DashboardPage = lazyNamed(() => import('@/features/dashboard/DashboardPage'), 'DashboardPage');

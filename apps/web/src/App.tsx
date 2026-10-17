@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, type ReactNode } from 'react';
-import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider, ScrollRestoration, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider, RedirectIfAuthed, RequireAuth } from '@/lib/auth';
@@ -31,6 +31,12 @@ function AppLayout() {
   );
 }
 
+/** /verify-email?next=… from before Google-only sign-in: keep ?next and go to /login. */
+function LegacyAuthRedirect() {
+  const next = new URLSearchParams(useLocation().search).get('next');
+  return <Navigate to={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} replace />;
+}
+
 function InApp({ children }: { children: ReactNode }) {
   return <Suspense fallback={<AppRouteFallback />}>{children}</Suspense>;
 }
@@ -51,8 +57,9 @@ export const routes = [
       { path: '/contact', element: <P.ContactPage /> },
       { path: '/login', element: <Guest><P.LoginPage /></Guest> },
       { path: '/register', element: <Guest><P.RegisterPage /></Guest> },
-      { path: '/forgot-password', element: <P.ForgotPasswordPage /> },
-      { path: '/verify-email', element: <RequireAuth allowUnverified><P.VerifyEmailPage /></RequireAuth> },
+      // Retired with email/password sign-in; old email links land on the Google sign-in page.
+      { path: '/forgot-password', element: <Navigate to="/login" replace /> },
+      { path: '/verify-email', element: <LegacyAuthRedirect /> },
       {
         path: '/app',
         element: <AppLayout />,

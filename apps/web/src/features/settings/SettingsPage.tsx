@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { KeyRound, LogOut, Trash2 } from 'lucide-react';
+import { LogOut, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateProfileSchema, type MeResponse, type UpdateProfileInput } from '@chatpilot/shared';
 import { api, errorMessage } from '@/lib/api';
-import { friendlyAuthError, useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/auth';
 import { useMe } from '@/lib/hooks';
 import { qk } from '@/lib/queryKeys';
 import { formatDate } from '@/lib/utils';
@@ -75,10 +75,9 @@ function ProfileCard({ me }: { me: MeResponse }) {
 }
 
 function SecurityCard() {
-  const { user, mode, resetPassword, signOut } = useAuth();
+  const { user, mode, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [sending, setSending] = useState(false);
   return (
     <Card>
       <CardHeader>
@@ -89,34 +88,14 @@ function SecurityCard() {
               <Badge variant="warning" className="mr-1">
                 Dev mode
               </Badge>
-              Passwords aren't used in dev mode.
+              Local passwordless sign-in.
             </>
           ) : (
-            'Change your password with a secure reset link.'
+            <>You sign in with your Google account{user?.email ? ` (${user.email})` : ''}. Manage its password and 2-step verification in your Google account.</>
           )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">
-        {mode === 'firebase' && (
-          <Button
-            variant="outline"
-            disabled={sending || !user}
-            onClick={async () => {
-              if (!user) return;
-              setSending(true);
-              try {
-                await resetPassword(user.email);
-                toast.success(`Password reset email sent to ${user.email}`);
-              } catch (e) {
-                toast.error(friendlyAuthError(e));
-              } finally {
-                setSending(false);
-              }
-            }}
-          >
-            <KeyRound /> {sending ? 'Sending…' : 'Send password reset email'}
-          </Button>
-        )}
         <Button
           variant="outline"
           onClick={async () => {

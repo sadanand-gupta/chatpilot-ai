@@ -38,9 +38,10 @@ Tests: the API's unit tests must cover each blocked range, IPv4-mapped IPv6, dec
 
 - `uid` comes **only** from the verified ID token (`verifyIdToken(token, checkRevoked=true)`), never
   from the body/query.
-- Firebase tokens must carry `email_verified=true`. Unverified email/password accounts get
-  `403 email_not_verified` on every private route except `GET`/`PATCH /api/me`; the dashboard keeps them on
-  `/verify-email`. Google sign-ins are verified by the provider. Dev tokens (`AUTH_MODE=dev`) count as verified.
+- Owners sign in with Google only. Firebase tokens must have `firebase.sign_in_provider` of `google.com`
+  (or `custom`, which only the service account can mint); others get `403 google_sign_in_required` on every
+  private route. The dashboard also signs out any non-Google session. Tokens must carry `email_verified=true`
+  (Google sets it), else `403 email_not_verified`. Dev tokens (`AUTH_MODE=dev`) skip both checks.
 - Every private query is scoped by `ownerId == uid`; every by-id load checks ownership and returns
   `404` for foreign documents.
 - Firestore client rules **deny all** ([`firebase/firestore.rules`](../firebase/firestore.rules)) —

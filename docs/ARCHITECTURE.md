@@ -74,7 +74,7 @@ ASCII version:
 | Decision | Choice | Why / trade-off |
 |---|---|---|
 | Data access | **Only the API** touches Firestore (Admin SDK). Web uses Firebase **only for Auth**. | One place for tenant isolation, quotas and validation. Firestore rules are deny-all (see [SECURITY.md](SECURITY.md)). Cost: no realtime listeners in the dashboard (polling instead). |
-| Auth | Firebase Auth (email/password). API verifies ID tokens with `verifyIdToken(token, checkRevoked=true)`; `uid` comes from the token only. | `checkRevoked` costs an extra Auth backend lookup per request but makes "sign out everywhere"/account disable effective immediately. |
+| Auth | Firebase Auth (Google sign-in only). API verifies ID tokens with `verifyIdToken(token, checkRevoked=true)`; `uid` comes from the token only. | `checkRevoked` costs an extra Auth backend lookup per request but makes "sign out everywhere"/account disable effective immediately. |
 | Dev mode | `AUTH_MODE=dev` (local JWT via `POST /api/dev/login`), `DATA_STORE=file` (JSON on disk), `AI_PROVIDER=mock`. | Full stack runs offline with no Firebase project, no Java, no AI key. The API **refuses to start** if `NODE_ENV=production` and any of these is set. |
 | AI | Provider adapter: `openai` (any OpenAI-compatible `/chat/completions`), `ollama` (local only), `mock`. | Switch providers with env vars only. Ollama is for local dev — not public production unless you host a GPU server. See [AI_PROVIDERS.md](AI_PROVIDERS.md). |
 | Retrieval | BM25 keyword search in-process over the chatbot's chunks, cached per chatbot and invalidated by `knowledgeVersion`. | Zero extra infra/cost, good for small business sites (≤ a few thousand chunks). Interface is replaceable by embeddings + vector DB later. |

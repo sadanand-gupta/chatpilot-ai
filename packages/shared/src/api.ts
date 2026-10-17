@@ -74,6 +74,7 @@ export type ApiErrorCode =
   | 'forbidden'
   /** Firebase email/password account whose email address isn't verified yet. */
   | 'email_not_verified'
+  | 'google_sign_in_required'
   | 'not_found'
   | 'validation_error'
   | 'quota_exceeded'

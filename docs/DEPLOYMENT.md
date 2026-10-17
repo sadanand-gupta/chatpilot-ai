@@ -14,7 +14,7 @@ free tiers change, so re-check before you rely on them.
 | Step | Needs a billing account or payment method? |
 |---|---|
 | 1 Firebase project + web app | **No** (Spark plan) |
-| 2 Auth (email/password) | **No** |
+| 2 Auth (Google sign-in) | **No** |
 | 3 Firestore (default) database | **No** |
 | 4 Rules + indexes deploy | **No** · TTL policy: **Yes (Blaze)** |
 | 5 Service account key | **No** |
@@ -63,31 +63,28 @@ reads (config pointer + version). A chat message costs a few reads and writes, s
 3. Locally: `cp .firebaserc.example .firebaserc` and set your project id. Then `npx firebase login`.
 4. Optional: create a second project for staging (`chatpilot-staging`).
 
-## 2. Authentication: Email/Password, authorized domains, templates
+## 2. Authentication: Google sign-in, authorized domains
 *Requires billing? **No.***
 
-1. **Authentication → Sign-in method → Email/Password → Enable.** Leave email-link sign-in off.
-2. **Authentication → Settings → Authorized domains** (the newer console may group this under *Security*). Add:
+Owners sign in with **Google only**. The dashboard has no email/password form, and the API rejects
+Firebase tokens whose `firebase.sign_in_provider` is not `google.com` (`403 google_sign_in_required`).
+Custom tokens minted with the service account are also accepted, for the smoke test and admin tooling.
+
+1. **Authentication → Sign-in method → Google → Enable.** Set the project's public-facing name and support email.
+2. **Disable Email/Password** on the same page (and leave email-link sign-in off). Users created with a
+   password can sign in with Google using the same address: with *One account per email address*
+   (the default), Firebase links the Google login to the existing user, so the `uid` and their data stay the same.
+3. **Authentication → Settings → Authorized domains** (the newer console may group this under *Security*). Add:
    - your app domain (`app.example.com`)
-   - the static-host domain (`<project>.pages.dev` or `<project>.web.app`)
+   - the static-host domain (`<project>.pages.dev`, `<project>.web.app` or `<project>.vercel.app`)
    - `localhost` if you test Firebase mode locally. Projects created after 2025-04-28 don't include `localhost` by default.
 
-   Remove domains you don't use. This list also gates the *continue URL* in verification and
-   password-reset emails: if the dashboard's domain is missing, `accounts:sendOobCode` returns 400
-   (`UNAUTHORIZED_DOMAIN`). The app then retries without a continue URL so the email still goes out,
-   but the link lands on Firebase's hosted page instead of returning to the app. Every time the
+   The Google popup fails with `auth/unauthorized-domain` on any domain that isn't listed. Every time the
    dashboard domain changes, add it here **and** to the API's `FRONTEND_URLS` / `PUBLIC_APP_URL` (§9).
-3. **Authentication → Templates.** Set the sender name, reply-to address and subject lines. Point the
-   **action URL** at your app if you handle actions there; the app sends verification links to `/verify-email`.
-   You can verify a custom sender domain through DNS. The message body can only be edited for
-   password-reset emails (https://support.google.com/firebase/answer/7000714).
-4. Know the Spark limits (https://firebase.google.com/docs/auth/limits): **100 account creations per hour per IP**,
-   1,000 verification emails per day and **150 password-reset emails per day**. Firebase emails often land in spam, so
-   a custom sender domain helps.
-5. **Restrict the browser API key:** Google Cloud Console → APIs & Services → Credentials → *Browser key* →
+4. **Restrict the browser API key:** Google Cloud Console → APIs & Services → Credentials → *Browser key* →
    set application restrictions to HTTP referrers (your domains), and API restrictions to Identity Toolkit API and Token Service API.
 
-The upgrade to Identity Platform is **not** needed for email/password. It adds MFA, SAML/OIDC and blocking functions.
+The upgrade to Identity Platform is **not** needed for Google sign-in.
 
 ## 3. Create Firestore
 *Requires billing? **No** for the `(default)` database.*
