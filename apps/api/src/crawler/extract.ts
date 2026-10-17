@@ -47,7 +47,7 @@ const BLOCK_TAGS = new Set([
 const HEADING_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']);
 const CELL_TAGS = new Set(['td', 'th']);
 
-export const collapse = (s: string): string => s.replace(/[ ​\s]+/g, ' ').trim();
+export const collapse = (s: string): string => s.replace(/[\u00a0\u200b\s]+/g, ' ').trim();
 
 function absolutize(href: string | undefined, base: string): string | undefined {
   if (!href) return undefined;
