@@ -17,3 +17,4 @@ service-account*.json
 .install.log
 .data-e2e/
 apps/api/.data-e2e/
+*.local.txt
