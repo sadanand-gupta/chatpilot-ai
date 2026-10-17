@@ -155,7 +155,7 @@ Facts (https://firebase.google.com/docs/firestore/ttl):
    - start: `npm run start -w @chatpilot/api`, `healthCheckPath: /health`
    - Render prompts once for every `sync: false` value: URLs, Firebase credentials and AI settings.
      It generates `CONVERSATION_SECRET` and `ADMIN_TOKEN`.
-3. After the first deploy, note the URL (`https://chatpilot-api.onrender.com`). Set `PUBLIC_API_URL` and
+3. After the first deploy, note the URL (`https://chatpilot-ai-api.onrender.com`). Set `PUBLIC_API_URL` and
    `PUBLIC_WIDGET_URL=<api>/widget.js`, then redeploy.
 4. Verify:
    - `curl https://<api>/health` returns 200
