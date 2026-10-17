@@ -64,6 +64,26 @@ function describe(res) {
   return `HTTP ${res.status}: ${truncate(res.text || '(empty body)')}`;
 }
 
+/**
+ * Signs in a test user. With FIREBASE_WEB_API_KEY set (API running AUTH_MODE=firebase) it creates a
+ * real Firebase Auth user via the public REST API; otherwise it uses the dev login endpoint.
+ */
+async function loginUser(email) {
+  const key = process.env.FIREBASE_WEB_API_KEY;
+  if (!key) {
+    const json = expectOk(await request('POST', '/api/dev/login', { body: { email } }));
+    return { token: json?.token, uid: json?.uid, email: json?.email ?? email };
+  }
+  const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${key}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: `Smoke-${RUN_ID}-pass!`, returnSecureToken: true }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`Firebase sign-up failed: ${json?.error?.message ?? res.status}`);
+  return { token: json.idToken, uid: json.localId, email };
+}
+
 async function request(method, path, { token, body, origin, headers = {} } = {}) {
   const url = path.startsWith('http') ? path : `${API}${path}`;
   const h = { Accept: 'application/json', ...headers };
@@ -198,9 +218,9 @@ async function main() {
     return truncate(json ?? res.text, 80);
   });
 
-  await step('POST /api/dev/login (owner A)', ['up'], async () => {
+  await step('Sign in (owner A)', ['up'], async () => {
     const email = `smoke-a-${RUN_ID}@example.com`;
-    const json = expectOk(await request('POST', '/api/dev/login', { body: { email } }));
+    const json = await loginUser(email);
     check(typeof json?.token === 'string' && json.token.length > 10, `no token in response: ${truncate(json)}`);
     ctx.tokenA = json.token;
     ctx.uidA = json.uid;
@@ -420,8 +440,8 @@ async function main() {
     return `${items(json).length} lead(s); ${lead.email}`;
   });
 
-  await step('POST /api/dev/login (user B)', ['up'], async () => {
-    const json = expectOk(await request('POST', '/api/dev/login', { body: { email: `smoke-b-${RUN_ID}@example.com` } }));
+  await step('Sign in (user B)', ['up'], async () => {
+    const json = await loginUser(`smoke-b-${RUN_ID}@example.com`);
     check(typeof json?.token === 'string', `no token: ${truncate(json)}`);
     check(json.uid !== ctx.uidA, 'user B got the same uid as user A');
     ctx.tokenB = json.token;
