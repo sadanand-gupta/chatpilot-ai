@@ -34,7 +34,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { EmailVerificationBanner } from './EmailVerificationBanner';
 
 const NAV = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -223,7 +222,6 @@ export function AppShell() {
             <UserMenu />
           </div>
         </header>
-        <EmailVerificationBanner />
         <main id="main" className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
           <ErrorBoundary resetKey={location.pathname}>
             <Outlet />

@@ -52,7 +52,7 @@ export const routes = [
       { path: '/login', element: <Guest><P.LoginPage /></Guest> },
       { path: '/register', element: <Guest><P.RegisterPage /></Guest> },
       { path: '/forgot-password', element: <P.ForgotPasswordPage /> },
-      { path: '/verify-email', element: <RequireAuth><P.VerifyEmailPage /></RequireAuth> },
+      { path: '/verify-email', element: <RequireAuth allowUnverified><P.VerifyEmailPage /></RequireAuth> },
       {
         path: '/app',
         element: <AppLayout />,

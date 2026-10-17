@@ -330,14 +330,27 @@ export function safeNext(next: string | null | undefined, fallback = '/app'): st
   return next;
 }
 
-/** Route guard: redirects signed-out visitors to /login?next=<current path>. */
-export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+/**
+ * True when a signed-in Firebase user still has to verify their email address. Dev mode has no
+ * email verification; OAuth providers such as Google report emailVerified=true already.
+ */
+export function needsEmailVerification(user: AuthUser | null, mode: AuthContextValue['mode']): boolean {
+  return mode === 'firebase' && !!user && !user.emailVerified;
+}
+
+/**
+ * Route guard: redirects signed-out visitors to /login?next=<current path>, and (firebase mode)
+ * signed-in users with an unverified email to /verify-email?next=<current path>.
+ * `allowUnverified` is only for the verify-email page itself.
+ */
+export function RequireAuth({ children, allowUnverified = false }: { children: ReactNode; allowUnverified?: boolean }) {
+  const { user, loading, mode } = useAuth();
   const location = useLocation();
   if (loading) return <FullPageSpinner label="Checking your session…" />;
-  if (!user) {
-    const next = `${location.pathname}${location.search}${location.hash}`;
-    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  const next = `${location.pathname}${location.search}${location.hash}`;
+  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />;
+  if (!allowUnverified && needsEmailVerification(user, mode)) {
+    return <Navigate to={`/verify-email?next=${encodeURIComponent(next)}`} replace />;
   }
   return <>{children}</>;
 }
@@ -349,7 +362,7 @@ export function RedirectIfAuthed({ children }: { children: ReactNode }) {
   if (loading) return <FullPageSpinner />;
   if (user) {
     const next = safeNext(new URLSearchParams(location.search).get('next'));
-    if (mode === 'firebase' && !user.emailVerified) {
+    if (needsEmailVerification(user, mode)) {
       return <Navigate to={`/verify-email?next=${encodeURIComponent(next)}`} replace />;
     }
     return <Navigate to={next} replace />;

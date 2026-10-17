@@ -72,6 +72,8 @@ import type {
 export type ApiErrorCode =
   | 'unauthorized'
   | 'forbidden'
+  /** Firebase email/password account whose email address isn't verified yet. */
+  | 'email_not_verified'
   | 'not_found'
   | 'validation_error'
   | 'quota_exceeded'

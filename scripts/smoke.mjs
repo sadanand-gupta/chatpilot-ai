@@ -14,6 +14,9 @@
  *   SMOKE_REQUEST_TIMEOUT_MS per-request timeout, default 45000
  *   SMOKE_SKIP_DEMO=1        skip the public demo steps (e.g. when DEMO_ENABLED=false or the per-IP hourly limit is hit)
  *   SMOKE_VERBOSE=1          print every request/response
+ *   FIREBASE_WEB_API_KEY     API in AUTH_MODE=firebase: sign up real Firebase users instead of /api/dev/login.
+ *                            Also needs Admin credentials (FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL +
+ *                            FIREBASE_PRIVATE_KEY, or GOOGLE_APPLICATION_CREDENTIALS) to mark them email-verified.
  *
  * Prints a ✔/✘ table; exits 1 if any step fails (or is skipped because a prerequisite failed).
  * Uses unique emails per run, so it can be re-run against the same data store.
@@ -81,7 +84,37 @@ async function loginUser(email) {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(`Firebase sign-up failed: ${json?.error?.message ?? res.status}`);
-  return { token: json.idToken, uid: json.localId, email };
+  // The API rejects unverified email/password users (403 email_not_verified), so mark the fresh
+  // test user verified with firebase-admin, then sign in again for a token with email_verified=true.
+  await markFirebaseEmailVerified(json.localId);
+  const again = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${key}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password: `Smoke-${RUN_ID}-pass!`, returnSecureToken: true }),
+  });
+  const signedIn = await again.json();
+  if (!again.ok) throw new Error(`Firebase sign-in failed: ${signedIn?.error?.message ?? again.status}`);
+  return { token: signedIn.idToken, uid: signedIn.localId, email };
+}
+
+/**
+ * Uses firebase-admin with the same credentials as the API: FIREBASE_PROJECT_ID +
+ * FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY, or GOOGLE_APPLICATION_CREDENTIALS (service-account JSON).
+ */
+async function markFirebaseEmailVerified(uid) {
+  const { applicationDefault, cert, getApps, initializeApp } = await import('firebase-admin/app');
+  const { getAuth } = await import('firebase-admin/auth');
+  const { FIREBASE_PROJECT_ID: projectId, FIREBASE_CLIENT_EMAIL: clientEmail } = process.env;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!(projectId && clientEmail && privateKey) && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    throw new Error(
+      'The API requires verified emails. Set FIREBASE_PROJECT_ID/FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY or GOOGLE_APPLICATION_CREDENTIALS so the smoke test can mark its test users verified.',
+    );
+  }
+  const app =
+    getApps()[0] ??
+    initializeApp({ credential: projectId && clientEmail && privateKey ? cert({ projectId, clientEmail, privateKey }) : applicationDefault(), projectId });
+  await getAuth(app).updateUser(uid, { emailVerified: true });
 }
 
 async function request(method, path, { token, body, origin, headers = {} } = {}) {

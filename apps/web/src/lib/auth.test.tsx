@@ -1,6 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
-import { actionContinueUrl, friendlyAuthError, RequireAuth, safeNext, sendWithContinueUrl } from './auth';
+import type { ReactElement } from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { render, screen } from '@testing-library/react';
+import {
+  actionContinueUrl,
+  AuthContext,
+  friendlyAuthError,
+  needsEmailVerification,
+  RequireAuth,
+  safeNext,
+  sendWithContinueUrl,
+  type AuthContextValue,
+  type AuthUser,
+} from './auth';
 import { LocationProbe, renderApp, signInDev } from '@/test/utils';
 
 describe('RequireAuth', () => {
@@ -67,5 +79,68 @@ describe('sendWithContinueUrl', () => {
     expect(friendlyAuthError(Object.assign(new Error('Firebase: Error (auth/something-new).'), { code: 'auth/something-new' }))).toBe(
       'Error (auth/something-new).',
     );
+  });
+});
+
+function firebaseAuthValue(user: AuthUser | null): AuthContextValue {
+  const noop = async () => undefined;
+  return {
+    user,
+    loading: false,
+    mode: 'firebase',
+    signIn: noop,
+    signUp: async () => ({ verificationSent: true, verificationError: null }),
+    signOut: noop,
+    resetPassword: noop,
+    resendVerification: noop,
+    refreshUser: async () => user,
+    getIdToken: async () => null,
+  };
+}
+
+function renderGuarded(user: AuthUser | null, ui: ReactElement, route = '/app/chatbots?tab=x') {
+  return render(
+    <AuthContext.Provider value={firebaseAuthValue(user)}>
+      <MemoryRouter initialEntries={[route]}>
+        <Routes>
+          <Route path="/app/*" element={ui} />
+          <Route path="/verify-email" element={<LocationProbe />} />
+          <Route path="/login" element={<LocationProbe />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
+
+const unverified: AuthUser = { uid: 'u1', email: 'new@example.com', emailVerified: false };
+const verified: AuthUser = { ...unverified, emailVerified: true };
+
+describe('RequireAuth email verification (firebase mode)', () => {
+  it('redirects unverified users to /verify-email with ?next', () => {
+    renderGuarded(unverified, <RequireAuth><p>secret dashboard</p></RequireAuth>);
+    expect(screen.getByTestId('location')).toHaveTextContent(`/verify-email?next=${encodeURIComponent('/app/chatbots?tab=x')}`);
+    expect(screen.queryByText('secret dashboard')).not.toBeInTheDocument();
+  });
+
+  it('lets verified users (incl. Google sign-ins) through', () => {
+    renderGuarded(verified, <RequireAuth><p>secret dashboard</p></RequireAuth>);
+    expect(screen.getByText('secret dashboard')).toBeInTheDocument();
+  });
+
+  it('allowUnverified renders the verify page itself for unverified users', () => {
+    renderGuarded(unverified, <RequireAuth allowUnverified><p>verify page</p></RequireAuth>);
+    expect(screen.getByText('verify page')).toBeInTheDocument();
+  });
+
+  it('still sends signed-out visitors to /login', () => {
+    renderGuarded(null, <RequireAuth allowUnverified><p>verify page</p></RequireAuth>);
+    expect(screen.getByTestId('location')).toHaveTextContent('/login?next=');
+  });
+
+  it('needsEmailVerification ignores dev mode', () => {
+    expect(needsEmailVerification(unverified, 'dev')).toBe(false);
+    expect(needsEmailVerification(unverified, 'firebase')).toBe(true);
+    expect(needsEmailVerification(verified, 'firebase')).toBe(false);
+    expect(needsEmailVerification(null, 'firebase')).toBe(false);
   });
 });

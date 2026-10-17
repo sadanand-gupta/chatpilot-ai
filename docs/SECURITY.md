@@ -38,6 +38,9 @@ Tests: the API's unit tests must cover each blocked range, IPv4-mapped IPv6, dec
 
 - `uid` comes **only** from the verified ID token (`verifyIdToken(token, checkRevoked=true)`), never
   from the body/query.
+- Firebase tokens must carry `email_verified=true`. Unverified email/password accounts get
+  `403 email_not_verified` on every private route except `GET`/`PATCH /api/me`; the dashboard keeps them on
+  `/verify-email`. Google sign-ins are verified by the provider. Dev tokens (`AUTH_MODE=dev`) count as verified.
 - Every private query is scoped by `ownerId == uid`; every by-id load checks ownership and returns
   `404` for foreign documents.
 - Firestore client rules **deny all** ([`firebase/firestore.rules`](../firebase/firestore.rules)) —
@@ -98,7 +101,7 @@ AI bill; or creates thousands of free accounts/demos to crawl.
 | Global | `AI_MAX_CONCURRENCY`, `AI_TIMEOUT_MS`, `MAX_OUTPUT_TOKENS`; set a **hard spend limit / budget alert at the AI provider**. |
 | Demo | `DEMO_ENABLED`, `DEMO_PER_IP_PER_HOUR`, `DEMO_MAX_PAGES`, `DEMO_MAX_MESSAGES`, 2h expiry. Turn it off during an attack. |
 | Origin | `allowedOrigins` (Origin header check) is a **soft control** — trivially spoofed by non-browser clients. It stops casual copy-paste of your snippet, not attackers. Real protection is the rows above. |
-| Sign-ups | Firebase Auth has built-in abuse protection; consider requiring verified email before crawling, and enable App Check/reCAPTCHA if fake sign-ups appear. |
+| Sign-ups | Firebase Auth has built-in abuse protection; verified email is required for all owner routes; enable App Check/reCAPTCHA if fake sign-ups appear. |
 | Scale-out | Rate limits are **in-memory per instance**. With >1 instance use a shared store (Redis/Upstash, `rate-limit-redis`). |
 
 ### 6. Secrets
