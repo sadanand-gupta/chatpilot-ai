@@ -10,6 +10,7 @@ import { qk, type ConversationFilters } from '@/lib/queryKeys';
 import { useChatbots } from '@/lib/hooks';
 import { dayBoundaryIso, useDebounced } from '@/lib/useDebounced';
 import { cn, formatDateTime, hostnameOf, safeHref } from '@/lib/utils';
+import { SafeMarkdown } from '@/components/SafeMarkdown';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,12 +83,13 @@ function MessageBubble({ m }: { m: ChatMessage }) {
       <div className={cn('flex max-w-[85%] flex-col sm:max-w-[75%]', isUser ? 'items-end' : 'items-start')}>
         <div
           className={cn(
-            'whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            'break-words rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed',
+            isUser && 'whitespace-pre-wrap',
             isUser ? 'rounded-tr-sm bg-brand-600 text-white' : 'rounded-tl-sm bg-slate-100 text-slate-800',
             m.fallback && 'ring-1 ring-amber-300',
           )}
         >
-          {m.content}
+          {isUser ? m.content : <SafeMarkdown text={m.content} />}
         </div>
         {!isUser && m.sources && m.sources.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">

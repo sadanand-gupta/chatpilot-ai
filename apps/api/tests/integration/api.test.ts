@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { MOCK_PREFIX } from '../../src/ai/mock';
+import { MOCK_MARKER } from '../../src/ai/mock';
 import { makeTestApp, type TestApp } from '../helpers/testApp';
 
 const PLANS = JSON.stringify([{ id: 'free', limits: { chatbots: 3 }, features: { csvExport: true, allowedOrigins: true } }]);
@@ -114,7 +114,7 @@ describe('API (dev auth, file store, mock AI)', () => {
   it('answers public messages from knowledge and binds conversations to visitor (M4)', async () => {
     const first = await t.agent.post(`/api/public/chatbots/${publicId}/messages`).send({ message: 'How much does cleaning cost?', visitorId, channel: 'widget' });
     expect(first.status).toBe(200);
-    expect(first.body.message.content.startsWith(MOCK_PREFIX)).toBe(true);
+    expect(first.body.message.content).toContain(MOCK_MARKER);
     expect(first.body.message.content).toContain('1500');
     expect(first.body.showLeadForm).toBe(false);
     conversationId = first.body.conversationId;

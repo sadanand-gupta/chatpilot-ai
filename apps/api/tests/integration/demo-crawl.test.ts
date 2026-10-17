@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { MOCK_PREFIX } from '../../src/ai/mock';
+import { MOCK_MARKER } from '../../src/ai/mock';
 import { htmlPage, startSite, type SiteServer } from '../helpers/siteServer';
 import { makeTestApp, type TestApp } from '../helpers/testApp';
 
@@ -114,7 +114,7 @@ describe('crawl + demo flows against a local site', () => {
     const ask = (message: string) => t.agent.post(`/api/public/chatbots/${created.body.publicId}/messages`).send({ message, visitorId, channel: 'demo' });
     const a1 = await ask('How much is a sourdough loaf?');
     expect(a1.status).toBe(200);
-    expect(a1.body.message.content.startsWith(MOCK_PREFIX)).toBe(true);
+    expect(a1.body.message.content).toContain(MOCK_MARKER);
     expect(a1.body.message.content).toContain('Rs 250');
     expect(a1.body.showLeadForm).toBe(false);
     await ask('croissant price');

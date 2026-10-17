@@ -451,6 +451,8 @@ export class Widget implements WidgetInstance {
     this.messages = (st.messages || []).filter((m) => m && typeof m.content === 'string' && (m.role === 'user' || m.role === 'assistant'));
     for (const m of this.messages) this.log_.append(this.msgRow_(m));
     this.renderSuggestions_();
+    const last = this.messages[this.messages.length - 1];
+    if (last && last.role === 'assistant' && this.messages.some((m) => m.role === 'user')) this.renderFollowups_(last.suggestions);
     this.scrollToBottom_();
   }
 
@@ -535,6 +537,18 @@ export class Widget implements WidgetInstance {
     this.suggestEl_ = wrap;
     if (this.welcomeEl_ && this.welcomeEl_.parentNode === this.log_ && !this.messages.length) this.welcomeEl_.after(wrap);
     else this.log_.append(wrap);
+  }
+
+  /** Tappable follow-up questions under the latest assistant reply (replaces any previous set). */
+  private renderFollowups_(raw?: unknown) {
+    if (this.suggestEl_) this.suggestEl_.remove();
+    this.suggestEl_ = undefined;
+    const qs = cleanSuggestions(raw);
+    if (!qs.length) return;
+    const wrap = h('div', { class: 'suggest followups', role: 'group', 'aria-label': 'Suggested follow-up questions' });
+    for (const q of qs) wrap.append(h('button', { type: 'button', class: 'chip', text: q, onclick: () => this.send(q) }));
+    this.suggestEl_ = wrap;
+    this.appendToLog_(wrap);
   }
 
   /** Inserts before the typing indicator so it always stays last. */
@@ -676,6 +690,7 @@ export class Widget implements WidgetInstance {
           content: String((r && r.content) || c.fallbackMessage),
           sources: r && r.sources,
           fallback: !!(r && r.fallback),
+          suggestions: cleanSuggestions(r && r.suggestions),
           createdAt: new Date().toISOString(),
         };
         const userCount = this.messages.filter((m) => m.role === 'user').length;
@@ -718,6 +733,7 @@ export class Widget implements WidgetInstance {
           content: typeof m.content === 'string' && m.content ? m.content : c.fallbackMessage,
           sources: m.sources,
           fallback: !!m.fallback,
+          suggestions: cleanSuggestions(m.suggestions),
           createdAt: m.createdAt || new Date().toISOString(),
         };
         showLead = !!r.showLeadForm;
@@ -725,6 +741,7 @@ export class Widget implements WidgetInstance {
       if (this.destroyed_) return;
       this.setTyping_(false);
       this.addMessage_(reply);
+      this.renderFollowups_(reply.suggestions);
       if (showLead && c.leadCapture.enabled) {
         this.leadAutoShown_ = true;
         this.showLead(false);
@@ -1020,4 +1037,17 @@ export class Widget implements WidgetInstance {
     this.root = undefined;
     if (this.onDestroy_) this.onDestroy_();
   }
+}
+
+/** Untrusted follow-up suggestions → at most 3 short, unique plain-text questions. */
+function cleanSuggestions(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v !== 'string') continue;
+    const q = v.replace(/\s+/g, ' ').trim().slice(0, 90);
+    if (q && !out.some((o) => o.toLowerCase() === q.toLowerCase())) out.push(q);
+    if (out.length === 3) break;
+  }
+  return out;
 }

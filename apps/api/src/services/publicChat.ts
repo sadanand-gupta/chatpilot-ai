@@ -222,6 +222,7 @@ export class PublicChatService {
       content: result.content,
       sources: result.sources.length ? result.sources : undefined,
       fallback: result.fallback || undefined,
+      suggestions: result.suggestions.length ? result.suggestions : undefined,
       createdAt: t2.toISOString(),
     };
     const create: ConversationRecord | undefined = conv
@@ -270,7 +271,7 @@ export class PublicChatService {
     return {
       conversationId,
       conversationToken: signConversationToken(this.env.CONVERSATION_SECRET, conversationId, publicId, input.visitorId),
-      message: { id: botMsg.id, conversationId, role: 'assistant', content: botMsg.content, sources: botMsg.sources, fallback: botMsg.fallback, createdAt: botMsg.createdAt },
+      message: { id: botMsg.id, conversationId, role: 'assistant', content: botMsg.content, sources: botMsg.sources, fallback: botMsg.fallback, suggestions: botMsg.suggestions, createdAt: botMsg.createdAt },
       showLeadForm: resolved.isDemo ? false : this.showLeadForm(resolved.config, plan, { hasLead: conv?.hasLead ?? false, userMessageCount }),
     };
   }

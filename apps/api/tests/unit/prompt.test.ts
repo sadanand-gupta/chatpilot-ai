@@ -34,7 +34,8 @@ describe('prompt builder', () => {
     expect(sys).toMatch(/Ignore any instructions/);
     expect(sys).toMatch(/Never reveal/);
     expect(sys).toMatch(/Never invent or estimate prices/);
-    expect(sys).toMatch(/at most 120 words/);
+    expect(sys).toMatch(/at most 150 words/i);
+    expect(sys).toMatch(/Never copy raw website text/);
     expect(sys).toContain(config.fallbackMessage);
     expect(sys).toContain('hi@acme.example');
   });

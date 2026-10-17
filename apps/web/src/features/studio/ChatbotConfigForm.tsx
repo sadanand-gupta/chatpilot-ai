@@ -708,7 +708,7 @@ function LivePreview({ control, chatbot }: { control: Control<ChatbotConfig>; ch
         history: history.slice(-20),
         config: configRef.current,
       });
-      return { content: reply.message.content, sources: reply.message.sources, fallback: reply.message.fallback };
+      return { content: reply.message.content, sources: reply.message.sources, fallback: reply.message.fallback, suggestions: reply.message.suggestions };
     },
     [chatbot.id],
   );

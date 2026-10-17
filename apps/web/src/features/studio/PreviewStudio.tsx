@@ -113,7 +113,7 @@ export function PreviewStudio({ chatbot: initial, onContinue }: PreviewStudioPro
         });
         setRetrieved({ question: message, items: reply.retrieved ?? [] });
         setLastError(null);
-        return { content: reply.message.content, sources: reply.message.sources, fallback: reply.message.fallback };
+        return { content: reply.message.content, sources: reply.message.sources, fallback: reply.message.fallback, suggestions: reply.message.suggestions };
       } catch (e) {
         setLastError(e);
         throw e;

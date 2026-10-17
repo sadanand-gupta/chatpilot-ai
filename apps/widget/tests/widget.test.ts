@@ -537,6 +537,37 @@ describe('lead capture', () => {
 });
 
 describe('preview mode', () => {
+  it('shows follow-up suggestions under the latest reply; tapping one sends it', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const box = document.createElement('div');
+    document.body.append(box);
+    const sendPreview = vi.fn(async (message: string) => ({
+      content: `Echo: ${message}`,
+      suggestions:
+        message === 'hello'
+          ? ['  What are your prices? ', 'what are your prices?', 'Do you offer refunds?', 'Where are you?', 'One too many']
+          : ['<img src=x onerror=alert(1)>'],
+    }));
+    const w = runtime().mount({ apiUrl: API, mode: 'preview', container: box, open: true, config: config(), businessName: 'B', sendPreview }) as Widget;
+    await w.ready;
+    const root = shadowOf(box.querySelector('chatpilot-widget'));
+
+    typeAndSend('hello', root);
+    await until(() => botBubbles(root).length === 2);
+    const chips = () => Array.from(root.querySelectorAll('.followups .chip')).map((c) => c.textContent);
+    // Trimmed, case-insensitively deduped, capped at 3.
+    expect(chips()).toEqual(['What are your prices?', 'Do you offer refunds?', 'Where are you?']);
+
+    (root.querySelector('.followups .chip') as HTMLButtonElement).click();
+    await until(() => botBubbles(root).length === 3);
+    expect(sendPreview.mock.calls[1][0]).toBe('What are your prices?');
+    // Only the latest reply's suggestions are shown, rendered as inert text.
+    expect(root.querySelectorAll('.followups').length).toBe(1);
+    expect(chips()).toEqual(['<img src=x onerror=alert(1)>']);
+    expect(root.querySelector('.followups img')).toBeNull();
+    w.destroy();
+  });
+
   it('uses sendPreview, and update() re-themes without losing messages', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

@@ -1,6 +1,7 @@
 import type { KnowledgeChunk, SourceType } from '@chatpilot/shared';
 import type { Store } from '../data/store';
-import { BM25Index } from './bm25';
+import { BM25Index, jaccard, tokenize } from './bm25';
+import { knowledgeTopics, type KnowledgeTopic } from './topics';
 
 /**
  * Retrieval interface. The BM25 implementation can later be swapped for an
@@ -11,9 +12,12 @@ export interface RetrievedChunk {
   sourceType: SourceType;
   score: number;
   matchedTerms: number;
+  /** IDF-weighted fraction (0..1) of the query's meaningful terms matched (0 for overview chunks). */
+  coverage: number;
 }
 
 export interface Retriever {
+  /** Top-k diverse chunks (max MAX_PER_SOURCE per source, near-duplicates dropped). */
   search(chatbotId: string, query: string, k: number, opts?: { knowledgeVersion?: number }): Promise<RetrievedChunk[]>;
   /**
    * General context for overview questions ("what do you do?") and for queries
@@ -21,11 +25,50 @@ export interface Retriever {
    * FAQ/manual chunks. hasKnowledge=false means the bot has no active knowledge.
    */
   overview(chatbotId: string, opts?: { knowledgeVersion?: number }): Promise<{ hasKnowledge: boolean; chunks: RetrievedChunk[] }>;
+  /** Short labels of what the knowledge covers (cleaned page titles, FAQ questions), best first. */
+  topics(chatbotId: string, businessName: string, opts?: { knowledgeVersion?: number }): Promise<KnowledgeTopic[]>;
   invalidate(chatbotId: string): void;
 }
 
-/** Minimum BM25 score for a chunk to count as relevant. Below this we answer with the fallback (no AI call). */
+/** Minimum BM25 score for a chunk to count as relevant. */
 export const MIN_RELEVANCE_SCORE = 0.1;
+/**
+ * Minimum IDF-weighted query coverage for a chunk to count as relevant. Stops a
+ * single weak keyword ("capital" in "What is the capital of France?") from
+ * pulling in an unrelated chunk.
+ */
+export const MIN_COVERAGE = 0.5;
+/** Chunks scoring below this fraction of the best hit are not worth a context slot. */
+export const RELATIVE_SCORE_FLOOR = 0.25;
+export const MAX_PER_SOURCE = 2;
+/** Token-set Jaccard above which two chunks count as near-duplicates (templated pages, footers). */
+export const NEAR_DUPLICATE_JACCARD = 0.8;
+
+export function isRelevant(h: RetrievedChunk): boolean {
+  return h.score >= MIN_RELEVANCE_SCORE && h.coverage >= MIN_COVERAGE;
+}
+
+/**
+ * Greedy diversification of an already ranked list: keeps at most `maxPerSource`
+ * chunks per source and drops chunks that are near-duplicates of a kept one.
+ */
+export function diversify(ranked: RetrievedChunk[], k: number, maxPerSource = MAX_PER_SOURCE): RetrievedChunk[] {
+  const out: RetrievedChunk[] = [];
+  const sets: Set<string>[] = [];
+  const perSource = new Map<string, number>();
+  for (const h of ranked) {
+    if (out.length >= k) break;
+    const key = h.chunk.url ?? h.chunk.sourceId;
+    if ((perSource.get(key) ?? 0) >= maxPerSource) continue;
+    if (out.some((o) => o.chunk.id === h.chunk.id)) continue;
+    const set = new Set(tokenize(h.chunk.text));
+    if (sets.some((s) => jaccard(s, set) > NEAR_DUPLICATE_JACCARD)) continue;
+    out.push(h);
+    sets.push(set);
+    perSource.set(key, (perSource.get(key) ?? 0) + 1);
+  }
+  return out;
+}
 
 const FAQ_BOOST = 1.25;
 
@@ -34,9 +77,11 @@ interface CacheEntry {
   index: BM25Index;
   chunks: Map<string, { chunk: KnowledgeChunk; type: SourceType }>;
   overviewIds: string[];
+  sources: { type: SourceType; title: string; url?: string }[];
+  topics: Map<string, KnowledgeTopic[]>;
 }
 
-function pathDepth(url: string | undefined): number {
+export function pathDepth(url: string | undefined): number {
   if (!url) return 99;
   try {
     const p = new URL(url).pathname.replace(/\/+$/, '');
@@ -87,7 +132,14 @@ export class BM25Retriever implements Retriever {
       if (first) overviewIds.push(first.id);
     }
     if (!overviewIds.length && docs.length) overviewIds.push(...docs.slice(0, 3).map((d) => d.id));
-    return { version, index: new BM25Index(docs), chunks: map, overviewIds };
+    return {
+      version,
+      index: new BM25Index(docs),
+      chunks: map,
+      overviewIds,
+      sources: activeSources.map((s) => ({ type: s.type, title: s.title, url: s.url })),
+      topics: new Map(),
+    };
   }
 
   private async entry(chatbotId: string, version: number): Promise<CacheEntry> {
@@ -121,16 +173,46 @@ export class BM25Retriever implements Retriever {
       hasKnowledge: e.chunks.size > 0,
       chunks: e.overviewIds.map((id) => {
         const c = e.chunks.get(id)!;
-        return { chunk: c.chunk, sourceType: c.type, score: 0, matchedTerms: 0 };
+        return { chunk: c.chunk, sourceType: c.type, score: 0, matchedTerms: 0, coverage: 0 };
       }),
     };
   }
 
+  async topics(chatbotId: string, businessName: string, opts: { knowledgeVersion?: number } = {}): Promise<KnowledgeTopic[]> {
+    const e = await this.entry(chatbotId, await this.versionOf(chatbotId, opts.knowledgeVersion));
+    let t = e.topics.get(businessName);
+    if (!t) {
+      t = knowledgeTopics(e.sources, businessName);
+      if (e.topics.size > 5) e.topics.clear();
+      e.topics.set(businessName, t);
+    }
+    return t;
+  }
+
   async search(chatbotId: string, query: string, k: number, opts: { knowledgeVersion?: number } = {}): Promise<RetrievedChunk[]> {
     const e = await this.entry(chatbotId, await this.versionOf(chatbotId, opts.knowledgeVersion));
-    return e.index.search(query, k).map((h) => {
-      const c = e.chunks.get(h.id)!;
-      return { chunk: c.chunk, sourceType: c.type, score: h.score, matchedTerms: h.matchedTerms };
-    });
+    const pool = e.index.search(expandSynonyms(query), Math.max(k * 5, 30));
+    const floor = (pool[0]?.score ?? 0) * RELATIVE_SCORE_FLOOR;
+    const ranked = pool
+      .filter((h) => h.score >= floor)
+      .map((h) => {
+        const c = e.chunks.get(h.id)!;
+        return { chunk: c.chunk, sourceType: c.type, score: h.score, matchedTerms: h.matchedTerms, coverage: h.coverage };
+      });
+    return diversify(ranked, k);
   }
+}
+
+/** Visitors and websites use different words for the same thing ("premium plan" vs "pricing"). */
+const SYNONYM_GROUPS: [RegExp, string][] = [
+  [/(cost|costs|price|prices|pricing|fees?|charges?|plans?|premium|paid|subscriptions?|packages?|how much|rates?|tariff)/i, 'pricing price cost plan fee'],
+  [/(contact|reach|call|phone|email|support|helpline|whatsapp)/i, 'contact email phone support'],
+  [/(refunds?|cancel(lation)?|money back|return)/i, 'refund cancellation policy'],
+  [/(where|location|address|located|office|branch)/i, 'address location office'],
+  [/(timings?|hours|open|opening|closing|schedule)/i, 'hours timings open'],
+];
+
+export function expandSynonyms(query: string): string {
+  const extra = SYNONYM_GROUPS.filter(([re]) => re.test(query)).map(([, words]) => words);
+  return extra.length ? `${query} ${extra.join(' ')}` : query;
 }

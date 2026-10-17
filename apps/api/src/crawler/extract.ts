@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import type { SiteMeta } from '@chatpilot/shared';
 import { sha1 } from '../lib/ids';
+import { jsonLdToItems } from './jsonld';
 
 /**
  * HTML -> clean, structured text. Removes chrome (scripts, nav, header, footer,
@@ -71,13 +72,38 @@ function baseHref($: cheerio.CheerioAPI, pageUrl: string): string {
   return (b && absolutize(b, pageUrl)) || pageUrl;
 }
 
+/** Inline elements that never split a word, so no space is inserted after them. */
+const WORD_INLINE = new Set(['b', 'strong', 'em', 'i', 'u', 'small', 'sup', 'sub', 'mark', 'abbr', 'code', 'kbd', 'q', 'time', 'wbr']);
+const CTA_CLASS_RE = /(^|[\s_-])(btn|button|cta|action)([\s_-]|$)/i;
+const COPYRIGHT_RE = /(all rights? reserved|^©|^copyright|©\s*\d{4})/i;
+/** Lines that are only counters/stats placeholders ("0%", "10+", "01", "3x"). */
+const COUNTER_RE = /^[-–]?\s*[\d.,]+\s*[%+x×kKmM]?\+?$/;
+
 function removeNoise($: cheerio.CheerioAPI): void {
+  // FAQ/accordion questions are often <button aria-expanded>: keep their text before buttons are removed.
+  $('button[aria-expanded],button[aria-controls],button[class*=accordion],button[class*=expansion-panel],button[class*=faq],button[class*=collapse]').each((_, el) => {
+    const q = collapse($(el).text());
+    $(el).replaceWith(q ? $('<p>').text(q) : '');
+  });
   $(REMOVE_TAGS).remove();
+  // Struck-through "was" prices next to the real price ("₹99₹180").
+  $('del,s,strike,[class*=oldprice],[class*=old-price],[class*=was-price],[class*=price-old],[class*=compare-at]').remove();
+  // Short CTA links/labels ("Build My Resume Now", "Get Started").
+  $('a,span,div').each((_, el) => {
+    const cls = $(el).attr('class') ?? '';
+    if (!CTA_CLASS_RE.test(cls)) return;
+    const t = collapse($(el).text());
+    if (t.split(' ').length <= 5 && $(el).find('p,h1,h2,h3,h4,li').length === 0) $(el).remove();
+  });
   $('[style*="display:none"],[style*="display: none"]').remove();
   $(CHROME_TAGS).remove();
   // Page-level header/footer only; an <article><header> usually holds the title.
-  $('header,footer').each((_, el) => {
+  $('header').each((_, el) => {
     if ($(el).parents('main,article').length === 0) $(el).remove();
+  });
+  // Footers are site chrome even when a framework renders them inside <main>.
+  $('footer,[id=footer],[class~=footer],[class*=site-footer],[class*=page-footer]').each((_, el) => {
+    if ($(el).parents('article').length === 0) $(el).remove();
   });
   $('[id],[class]').each((_, el) => {
     const tag = (el as unknown as DomNode).name;
@@ -114,9 +140,12 @@ function walkSections(rootNode: DomNode): ExtractedSection[] {
   let cur: { heading?: string; paras: string[] } = { paras: [] };
   let buf = '';
   const flush = () => {
-    const t = collapse(buf);
-    if (t.length >= 2 && !cur.paras.includes(t)) cur.paras.push(t);
+    const t = collapse(buf).replace(/\s+([.,;:!?%)])/g, '$1');
     buf = '';
+    if (t.length < 2 || cur.paras.includes(t) || COUNTER_RE.test(t.replace(/^- /, ''))) return;
+    if (t.length < 160 && COPYRIGHT_RE.test(t)) return;
+    if (t === cur.heading) return;
+    cur.paras.push(t);
   };
   const textOf = (n: DomNode, depth = 0): string => {
     if (depth > 100) return '';
@@ -153,6 +182,7 @@ function walkSections(rootNode: DomNode): ExtractedSection[] {
     if (name === 'li') buf += '- ';
     for (const c of n.children ?? []) walk(c, depth + 1);
     if (CELL_TAGS.has(name)) buf += ' | ';
+    else if (!block && !WORD_INLINE.has(name)) buf += ' '; // adjacent <span>s/<a>s must not glue ("96%ATS")
     if (block) flush();
   };
   walk(rootNode);
@@ -161,8 +191,8 @@ function walkSections(rootNode: DomNode): ExtractedSection[] {
   return sections
     .map((s) => ({
       heading: s.heading,
-      // Heading-only sections keep the heading as their text so it stays searchable.
-      text: (s.paras.length ? s.paras : s.heading ? [s.heading] : [])
+      // Short heading-only sections are labels for removed widgets; long ones are real statements.
+      text: (s.paras.length ? s.paras : s.heading && s.heading.length > 40 ? [s.heading] : [])
         .map((p) => p.replace(/(\s*\|\s*)+$/, '').replace(/^- (\s*-\s*)+/, '- '))
         .filter((p) => p && p !== '-')
         .join('\n'),
@@ -189,11 +219,21 @@ export function extractPage(html: string, pageUrl: string): ExtractedPage {
   const title = collapse($('title').first().text()) || collapse($('meta[property="og:title"]').attr('content') ?? '') || collapse($('h1').first().text());
   const description = collapse($('meta[name="description"]').attr('content') ?? $('meta[property="og:description"]').attr('content') ?? '') || undefined;
   const lang = $('html').attr('lang')?.slice(0, 10);
+  const jsonLd = $('script[type="application/ld+json"]')
+    .map((_, el) => $(el).text())
+    .get();
 
   removeNoise($);
   const root = pickRoot($);
   const node = root.get(0) as unknown as DomNode | undefined;
   const sections = node ? walkSections(node) : [];
+  // Structured data (prices, FAQ, address, hours) — often richer than the visible text.
+  const visible = sections.map((s) => `${s.heading ?? ''} ${s.text}`).join(' ').toLowerCase();
+  for (const item of jsonLdToItems(jsonLd)) {
+    if (item.question && visible.includes(item.question.toLowerCase().slice(0, 60))) continue;
+    const body = item.lines.join('\n').trim();
+    if (body) sections.push({ heading: item.heading, text: body });
+  }
   const text = sectionsToText(sections);
   return {
     url: pageUrl,

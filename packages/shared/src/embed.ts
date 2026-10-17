@@ -35,7 +35,7 @@ export interface WidgetMountOptions {
   sendPreview?: (
     message: string,
     history: { role: 'user' | 'assistant'; content: string }[],
-  ) => Promise<{ content: string; sources?: { url?: string; title?: string }[]; fallback?: boolean }>;
+  ) => Promise<{ content: string; sources?: { url?: string; title?: string }[]; fallback?: boolean; suggestions?: string[] }>;
   previewToken?: string;
 }
 

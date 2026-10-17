@@ -125,6 +125,7 @@ border:1px solid var(--cp-border);background:#fff;color:var(--cp-muted);text-dec
 .src svg,.act svg{width:13px;height:13px}
 .act{color:var(--cp-link);font-weight:500;border-color:var(--cp-primary-soft-border);background:var(--cp-primary-soft)}
 .suggest{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding-left:36px}
+.followups{justify-content:flex-start}
 .chip{font-size:13px;line-height:1.35;padding:7px 12px;border-radius:999px;border:1px solid var(--cp-primary-soft-border);background:#fff;color:var(--cp-link);text-align:left;transition:background-color .15s,border-color .15s}
 .chip:hover{background:var(--cp-primary-soft);border-color:var(--cp-primary)}
 .typing{display:flex;gap:4px;align-items:center;padding:13px 14px}

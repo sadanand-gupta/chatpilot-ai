@@ -44,6 +44,7 @@ export function normalizeOrigin(input: string): string {
 
 export function defaultConfigFor(businessName: string, language: ChatbotConfig['language'] = 'auto'): ChatbotConfig {
   return defaultChatbotConfig({
+    botName: `${businessName} Assistant`.slice(0, 60),
     headerTitle: businessName.slice(0, 80),
     welcomeMessage: `Hi! 👋 Welcome to ${businessName}. How can I help you today?`.slice(0, 500),
     language,
@@ -266,7 +267,7 @@ export class ChatbotService {
     }
     await this.usage.record(user.uid, { messages: 1, aiTokens: result.tokens });
     return {
-      message: { role: 'assistant', content: result.content, sources: result.sources, fallback: result.fallback },
+      message: { role: 'assistant', content: result.content, sources: result.sources, fallback: result.fallback, suggestions: result.suggestions },
       retrieved: result.retrieved.map((r) => ({
         title: r.chunk.title,
         url: r.chunk.url,

@@ -8,7 +8,7 @@ export class OpenAICompatibleProvider implements AIProvider {
   readonly name = 'openai';
   private baseUrl: string;
 
-  constructor(private opts: { baseUrl?: string; apiKey: string; model: string; fetchImpl?: typeof fetch }) {
+  constructor(private opts: { baseUrl?: string; apiKey: string; model: string; reasoningEffort?: 'low' | 'medium' | 'high'; fetchImpl?: typeof fetch }) {
     // Strip trailing slashes: Gemini's documented base URL ends with "/".
     this.baseUrl = (opts.baseUrl ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
   }
@@ -25,6 +25,8 @@ export class OpenAICompatibleProvider implements AIProvider {
           messages: req.messages,
           max_tokens: req.maxTokens,
           temperature: req.temperature,
+          // Reasoning models (gpt-oss, o-series): keep thinking short so the visible answer fits the budget.
+          ...(this.opts.reasoningEffort ? { reasoning_effort: this.opts.reasoningEffort } : {}),
           stream: false,
         }),
         signal: req.signal,

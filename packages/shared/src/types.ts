@@ -181,6 +181,8 @@ export interface ChatMessage {
   sources?: SourceRef[];
   /** True when the reply is the configured fallback (no grounded answer / AI failure). */
   fallback?: boolean;
+  /** Up to 3 short follow-up questions the visitor can tap next. */
+  suggestions?: string[];
   createdAt: ISODate;
 }
 

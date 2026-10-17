@@ -6,6 +6,8 @@ export interface StoredMessage {
   content: string;
   sources?: SourceRef[];
   fallback?: boolean;
+  /** Follow-up questions offered after this reply (only the latest reply's are shown). */
+  suggestions?: string[];
   createdAt: string;
 }
 

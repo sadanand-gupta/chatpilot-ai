@@ -47,7 +47,7 @@ async function main() {
     const flags = [
       env.AUTH_MODE === 'dev' && 'AUTH_MODE=dev (anyone can sign in with any email)',
       env.DATA_STORE === 'file' && `DATA_STORE=file (${path.resolve(env.FILE_STORE_DIR)})`,
-      env.AI_PROVIDER === 'mock' && 'AI_PROVIDER=mock (replies are prefixed "[dev mock AI]")',
+      env.AI_PROVIDER === 'mock' && 'AI_PROVIDER=mock (replies end with a "Dev preview answer" note)',
     ].filter(Boolean);
     logger.warn({ devMode: true, flags }, '*** DEV MODE *** — never use these settings in production');
     console.warn(`\n  *** DEV MODE ***\n  ${flags.join('\n  ')}\n`);

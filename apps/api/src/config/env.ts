@@ -85,10 +85,12 @@ const envSchema = z.object({
   AI_MAX_CONCURRENCY: int(4, 1, 100),
   MAX_OUTPUT_TOKENS: int(500, 16, 8000),
   AI_TEMPERATURE: num(0.2, 0, 2),
+  /** Optional `reasoning_effort` for reasoning models (e.g. Groq openai/gpt-oss-*). */
+  AI_REASONING_EFFORT: z.enum(['low', 'medium', 'high']).optional(),
   MAX_CRAWL_PAGES: int(50, 1, 500),
   MAX_CRAWL_DEPTH: int(3, 0, 10),
   CRAWL_CONCURRENCY: int(3, 1, 10),
-  CRAWL_PAGE_TIMEOUT_MS: int(12000, 1000, 120000),
+  CRAWL_PAGE_TIMEOUT_MS: int(20000, 1000, 120000),
   CRAWL_MAX_PAGE_BYTES: int(2_000_000, 10_000, 20_000_000),
   MAX_MESSAGE_LENGTH: int(2000, 1, 2000),
   RATE_LIMIT_WINDOW_MS: int(60000, 1000),

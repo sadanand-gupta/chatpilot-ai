@@ -37,7 +37,7 @@ export function createProvider(env: Env): AIProvider {
       return new OllamaProvider({ baseUrl: env.AI_BASE_URL, model: env.AI_MODEL! });
     case 'openai':
     default:
-      return new OpenAICompatibleProvider({ baseUrl: env.AI_BASE_URL, apiKey: env.AI_API_KEY!, model: env.AI_MODEL! });
+      return new OpenAICompatibleProvider({ baseUrl: env.AI_BASE_URL, apiKey: env.AI_API_KEY!, model: env.AI_MODEL!, reasoningEffort: env.AI_REASONING_EFFORT });
   }
 }
 

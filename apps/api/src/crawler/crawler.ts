@@ -2,7 +2,7 @@ import type { CrawlPageResult, SiteMeta } from '@chatpilot/shared';
 import { extractPage, extractPlainText, extractSiteMeta, looksLikeChallenge, removeBoilerplate, type ExtractedPage } from './extract';
 import { fetchRobots, type RobotsRules } from './robots';
 import { FetchError, safeFetch, type RawLookup, type SafeFetchOptions } from './safeFetch';
-import { discoverSitemapUrls } from './sitemap';
+import { discoverSitemapEntries } from './sitemap';
 import { parseAndCheckUrl, UrlBlockedError, type UrlSafetyOptions } from './urlSafety';
 
 /**
@@ -116,7 +116,22 @@ interface FrontierItem {
   url: string;
   depth: number;
   priority: number;
+  family: string;
 }
+
+/**
+ * Parent path of a URL ("/locations/chennai" -> "/locations/"). Templated sections
+ * (city pages, blog posts, product variants) share a family; top-level pages each have their own.
+ */
+export function familyOf(url: string): string {
+  const parts = new URL(url).pathname.split('/').filter(Boolean);
+  return parts.length < 2 ? `top:${parts[0] ?? ''}` : `/${parts.slice(0, -1).join('/')}/`;
+}
+
+/** Extra cost per page already taken from a large family, so a small page budget covers distinct pages first. */
+export const FAMILY_PENALTY = 40;
+export const FAMILY_FREE_PAGES = 1;
+export const LARGE_FAMILY = 4;
 
 export async function crawlSite(opts: CrawlOptions): Promise<CrawlOutput> {
   const stats: CrawlStats = { discovered: 0, processed: 0, skipped: 0, failed: 0 };
@@ -165,23 +180,36 @@ export async function crawlSite(opts: CrawlOptions): Promise<CrawlOutput> {
   const seen = new Set<string>();
   const frontier: FrontierItem[] = [];
   const MAX_FRONTIER = 3000;
-  const enqueue = (raw: string, depth: number) => {
+  const familySize = new Map<string, number>();
+  const familyTaken = new Map<string, number>();
+  /** bonus < 0 raises priority (home-page navigation links, high sitemap priority). */
+  const enqueue = (raw: string, depth: number, bonus = 0) => {
     if (seen.size >= MAX_FRONTIER) return;
     const c = canonicalUrl(raw);
-    if (!c || seen.has(c) || !sameSite(c)) return;
+    if (!c) return;
+    if (seen.has(c)) {
+      // Already queued (e.g. from the sitemap) — still apply a better bonus (e.g. it's in the main nav).
+      const queued = bonus < 0 ? frontier.find((f) => f.url === c) : undefined;
+      if (queued) queued.priority = Math.min(queued.priority, priorityOf(c, depth) + bonus);
+      return;
+    }
+    if (!sameSite(c)) return;
     const path = new URL(c).pathname;
     if (SKIP_EXT.test(path)) return;
     if (depth > opts.maxDepth) return;
     if (!robots.isAllowed(c)) return;
     seen.add(c);
     stats.discovered++;
-    frontier.push({ url: c, depth, priority: priorityOf(c, depth) });
+    const family = familyOf(c);
+    familySize.set(family, (familySize.get(family) ?? 0) + 1);
+    frontier.push({ url: c, depth, priority: priorityOf(c, depth) + bonus, family });
   };
 
   enqueue(start.href, 0);
   if (opts.useSitemap !== false && !opts.signal?.aborted) {
-    const fromSitemap = await discoverSitemapUrls(start.origin, robots.sitemaps, fetchOpts, { isSameSite: sameSite, maxUrls: 300 }).catch(() => []);
-    for (const u of fromSitemap) enqueue(u, 1);
+    const fromSitemap = await discoverSitemapEntries(start.origin, robots.sitemaps, fetchOpts, { isSameSite: sameSite, maxUrls: 300 }).catch(() => []);
+    // <priority> 0..1 -> up to 8 points of bonus (a tie-breaker, not a trump card).
+    for (const e of fromSitemap) enqueue(e.url, 1, e.priority !== undefined ? -Math.round(e.priority * 8) : 0);
   }
 
   const contentHashes = new Set<string>();
@@ -204,11 +232,25 @@ export async function crawlSite(opts: CrawlOptions): Promise<CrawlOutput> {
     }
   };
 
+  const effectivePriority = (f: FrontierItem) => {
+    if (f.family.startsWith('top:') || (familySize.get(f.family) ?? 0) < LARGE_FAMILY) return f.priority;
+    const taken = familyTaken.get(f.family) ?? 0;
+    return f.priority + Math.max(0, taken - FAMILY_FREE_PAGES + 1) * FAMILY_PENALTY;
+  };
   const takeNext = (): FrontierItem | undefined => {
     if (!frontier.length) return undefined;
     let best = 0;
-    for (let i = 1; i < frontier.length; i++) if (frontier[i].priority < frontier[best].priority) best = i;
-    return frontier.splice(best, 1)[0];
+    let bestScore = effectivePriority(frontier[0]);
+    for (let i = 1; i < frontier.length; i++) {
+      const score = effectivePriority(frontier[i]);
+      if (score < bestScore) {
+        best = i;
+        bestScore = score;
+      }
+    }
+    const item = frontier.splice(best, 1)[0];
+    familyTaken.set(item.family, (familyTaken.get(item.family) ?? 0) + 1);
+    return item;
   };
 
   const done = () =>
@@ -227,7 +269,14 @@ export async function crawlSite(opts: CrawlOptions): Promise<CrawlOutput> {
 
     let res;
     try {
-      res = await safeFetch(item.url, fetchOpts);
+      try {
+        res = await safeFetch(item.url, fetchOpts);
+      } catch (first) {
+        // Slow sites time out intermittently: retry once after a short pause.
+        if (!(first instanceof FetchError && first.code === 'timeout') || opts.signal?.aborted) throw first;
+        await new Promise((r) => setTimeout(r, 1500));
+        res = await safeFetch(item.url, fetchOpts);
+      }
     } catch (e) {
       if (opts.signal?.aborted) return;
       const reason =
@@ -305,7 +354,9 @@ export async function crawlSite(opts: CrawlOptions): Promise<CrawlOutput> {
       await record({ url: item.url, status: 'skipped', reason: 'Page asks not to be indexed (noindex)' });
       return;
     }
-    for (const link of page.links) enqueue(link, item.depth + 1);
+    // Links on the start page (its navigation) describe the site's main sections.
+    const navBonus = item.depth === 0 ? -12 : 0;
+    for (const link of page.links) enqueue(link, item.depth + 1, navBonus);
 
     if (page.text.length < 50) {
       await record({ url: item.url, status: 'skipped', title: page.title, reason: 'No readable text (the page may require JavaScript)', chars: page.text.length });

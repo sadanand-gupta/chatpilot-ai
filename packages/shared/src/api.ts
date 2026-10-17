@@ -120,7 +120,7 @@ export interface PublicChatReply {
 }
 
 export interface PreviewChatReply {
-  message: { role: 'assistant'; content: string; sources?: SourceRef[]; fallback?: boolean };
+  message: { role: 'assistant'; content: string; sources?: SourceRef[]; fallback?: boolean; suggestions?: string[] };
   /** Retrieved chunks for transparency in the studio. */
   retrieved?: { title?: string; url?: string; score: number; excerpt: string }[];
 }
