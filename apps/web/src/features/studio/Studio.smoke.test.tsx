@@ -53,11 +53,15 @@ beforeEach(() => {
 
 describe('CreateChatbotWizard', () => {
   it('prefills from ?url=, creates the chatbot and moves to the crawl step', async () => {
+    const crawlJob = { id: 'j1', chatbotId: 'bot_1', ownerId: 'u1', startUrl: bot.websiteUrl, status: 'queued', stats: { discovered: 0, processed: 0, skipped: 0, failed: 0 }, pages: [], maxPages: 15, createdAt: '' };
     postMock.mockImplementation((path: string) => {
       if (path === '/chatbots') return Promise.resolve(bot);
-      if (path === '/chatbots/bot_1/crawl') return Promise.resolve({ ...{ id: 'j1', chatbotId: 'bot_1', ownerId: 'u1', startUrl: bot.websiteUrl, status: 'queued', stats: { discovered: 0, processed: 0, skipped: 0, failed: 0 }, pages: [], maxPages: 15, createdAt: '' } });
+      if (path === '/chatbots/bot_1/crawl') return Promise.resolve(crawlJob);
       return Promise.reject(new Error(path));
     });
+    // The crawl panel polls the started job; without this it would get the generic list response.
+    const baseGet = getMock.getMockImplementation()!;
+    getMock.mockImplementation((path: string) => (path === '/chatbots/bot_1/crawl-jobs/j1' ? Promise.resolve(crawlJob) : baseGet(path)));
     renderWithProviders(<CreateChatbotWizard />, { route: '/app/chatbots/new?url=acme-bakery.example', path: '/app/chatbots/new' });
     const url = screen.getByLabelText('Website URL') as HTMLInputElement;
     await waitFor(() => expect(url.value).toBe('https://acme-bakery.example/'));

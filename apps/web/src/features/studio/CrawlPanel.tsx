@@ -153,7 +153,9 @@ export function CrawlPanel({ chatbot: initialChatbot, autoStart, onContinue, onA
               We visit your public pages, extract the readable text and turn it into your chatbot's knowledge.
             </CardDescription>
           </div>
-          {current && <Badge variant={STATUS_BADGE[current.status].variant}>{STATUS_BADGE[current.status].label}</Badge>}
+          {current && STATUS_BADGE[current.status] && (
+            <Badge variant={STATUS_BADGE[current.status].variant}>{STATUS_BADGE[current.status].label}</Badge>
+          )}
         </CardHeader>
         <CardContent className="space-y-5">
           {(!current || isTerminalCrawl(current.status)) && (
