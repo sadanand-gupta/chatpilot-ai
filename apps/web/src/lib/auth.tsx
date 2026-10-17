@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import type { Auth, User as FirebaseUser } from 'firebase/auth';
+import type { ActionCodeSettings, Auth, User as FirebaseUser } from 'firebase/auth';
 import { appConfig } from './config';
 import { ApiError, publicApi, setAuthTokenGetter, setUnauthorizedHandler } from './api';
 import { FullPageSpinner } from '@/components/ui/spinner';
@@ -17,7 +17,11 @@ export interface AuthContextValue {
   loading: boolean;
   mode: 'firebase' | 'dev';
   signIn(email: string, password: string): Promise<void>;
-  signUp(email: string, password: string, displayName?: string): Promise<void>;
+  /**
+   * Creates the account and (firebase mode) sends the verification email. The account is created
+   * even if the email fails; `verificationError` then holds a user-facing reason.
+   */
+  signUp(email: string, password: string, displayName?: string): Promise<SignUpResult>;
   signOut(): Promise<void>;
   resetPassword(email: string): Promise<void>;
   resendVerification(): Promise<void>;
@@ -26,7 +30,15 @@ export interface AuthContextValue {
   getIdToken(): Promise<string | null>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+export interface SignUpResult {
+  /** Firebase mode only: true when the verification email was accepted by Firebase. */
+  verificationSent: boolean;
+  /** Firebase mode only: why the verification email could not be sent. */
+  verificationError: string | null;
+}
+
+/** Exported for tests that need to render guards with a specific auth state. */
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const DEV_AUTH_STORAGE_KEY = 'chatpilot.devAuth';
 
@@ -70,11 +82,51 @@ export function friendlyAuthError(e: unknown): string {
     'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
     'auth/network-request-failed': 'Network error. Check your connection and try again.',
     'auth/user-disabled': 'This account has been disabled.',
+    'auth/quota-exceeded': 'Our email limit for today has been reached. Please try again later.',
+    'auth/unauthorized-continue-uri':
+      "This site's domain is not authorized in Firebase (Authentication → Settings → Authorized domains).",
+    'auth/invalid-continue-uri': 'The verification link could not be created for this site address.',
   };
   if (map[code]) return map[code];
   if (e instanceof ApiError) return e.code === 'network_error' ? 'Could not reach the server. Is the API running?' : e.message;
   if (e instanceof Error && e.message) return e.message.replace(/^Firebase:\s*/, '');
   return 'Something went wrong. Please try again.';
+}
+
+/** Firebase error codes meaning "the continue URL in actionCodeSettings was rejected". */
+const CONTINUE_URL_ERRORS = new Set([
+  'auth/unauthorized-continue-uri', // server UNAUTHORIZED_DOMAIN: host not in Authorized domains
+  'auth/invalid-continue-uri',
+  'auth/missing-continue-uri',
+]);
+
+/**
+ * Continue URL for Firebase action emails (verify email, reset password). Uses the origin the
+ * visitor is actually on, so a stale VITE_PUBLIC_APP_URL (e.g. an old deployment domain) can't
+ * break email sending.
+ */
+export function actionContinueUrl(path: string): string {
+  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : appConfig.appUrl;
+  return `${origin.replace(/\/$/, '')}${path}`;
+}
+
+/**
+ * Sends a Firebase action email with a continue URL back to this app. If Firebase rejects the
+ * continue URL (the domain isn't in Authorized domains), retries without one: the email still goes
+ * out and the link opens Firebase's hosted action page instead of returning to the app.
+ */
+export async function sendWithContinueUrl(send: (settings?: ActionCodeSettings) => Promise<void>, path: string): Promise<void> {
+  const url = actionContinueUrl(path);
+  try {
+    await send({ url });
+  } catch (e) {
+    const code = (e as { code?: string })?.code ?? '';
+    if (!CONTINUE_URL_ERRORS.has(code)) throw e;
+    console.warn(
+      `[auth] Firebase rejected the continue URL ${url} (${code}). Add ${new URL(url).hostname} to Firebase Console → Authentication → Settings → Authorized domains. Retrying without a continue URL.`,
+    );
+    await send();
+  }
 }
 
 function toAuthUser(u: FirebaseUser): AuthUser {
@@ -206,17 +258,24 @@ export function AuthProvider({ children, mode = appConfig.authMode }: { children
   );
 
   const signUp = useCallback(
-    async (email: string, password: string, displayName?: string) => {
-      if (mode === 'dev') return devLogin(email, displayName);
+    async (email: string, password: string, displayName?: string): Promise<SignUpResult> => {
+      if (mode === 'dev') {
+        await devLogin(email, displayName);
+        return { verificationSent: false, verificationError: null };
+      }
       const { auth, mod } = await getFirebase();
       const cred = await mod.createUserWithEmailAndPassword(auth, email.trim(), password);
       if (displayName) await mod.updateProfile(cred.user, { displayName });
+      let result: SignUpResult = { verificationSent: true, verificationError: null };
       try {
-        await mod.sendEmailVerification(cred.user, { url: `${appConfig.appUrl}/verify-email` });
-      } catch {
-        /* the user can resend from the verify page */
+        await sendWithContinueUrl((s) => mod.sendEmailVerification(cred.user, s), '/verify-email');
+      } catch (e) {
+        // The account exists; the verify page shows this reason and offers a resend.
+        console.error('[auth] sendEmailVerification failed', e);
+        result = { verificationSent: false, verificationError: friendlyAuthError(e) };
       }
       setUser(toAuthUser(cred.user));
+      return result;
     },
     [mode, devLogin, getFirebase],
   );
@@ -225,7 +284,7 @@ export function AuthProvider({ children, mode = appConfig.authMode }: { children
     async (email: string) => {
       if (mode === 'dev') return; // no passwords in dev mode
       const { auth, mod } = await getFirebase();
-      await mod.sendPasswordResetEmail(auth, email.trim(), { url: `${appConfig.appUrl}/login` });
+      await sendWithContinueUrl((s) => mod.sendPasswordResetEmail(auth, email.trim(), s), '/login');
     },
     [mode, getFirebase],
   );
@@ -234,7 +293,8 @@ export function AuthProvider({ children, mode = appConfig.authMode }: { children
     if (mode === 'dev') return;
     const { auth, mod } = await getFirebase();
     if (!auth.currentUser) throw new Error('You need to be signed in.');
-    await mod.sendEmailVerification(auth.currentUser, { url: `${appConfig.appUrl}/verify-email` });
+    const current = auth.currentUser;
+    await sendWithContinueUrl((s) => mod.sendEmailVerification(current, s), '/verify-email');
   }, [mode, getFirebase]);
 
   const refreshUser = useCallback(async (): Promise<AuthUser | null> => {

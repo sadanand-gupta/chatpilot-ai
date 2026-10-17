@@ -12,6 +12,7 @@ import { FormField } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Spinner } from '@/components/ui/spinner';
 import { AuthLayout } from './AuthLayout';
+import type { VerifyEmailState } from './VerifyEmailPage';
 
 export const registerSchema = z.object({
   displayName: z.string().trim().min(1, 'Please enter your name').max(120),
@@ -36,11 +37,12 @@ export function RegisterPage() {
   const onSubmit = form.handleSubmit(async (v) => {
     setError(null);
     try {
-      await signUp(v.email, v.password, v.displayName);
+      const result = await signUp(v.email, v.password, v.displayName);
       // Save the display name on the API profile too (best-effort).
       api.patch('/me', { displayName: v.displayName }).catch(() => undefined);
       if (mode === 'firebase') {
-        navigate(`/verify-email?next=${encodeURIComponent(safeNext(next))}`, { replace: true });
+        const state: VerifyEmailState = { sent: result.verificationSent, sendError: result.verificationError };
+        navigate(`/verify-email?next=${encodeURIComponent(safeNext(next))}`, { replace: true, state });
       } else {
         navigate(safeNext(next), { replace: true });
       }

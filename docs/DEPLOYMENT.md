@@ -72,7 +72,11 @@ reads (config pointer + version). A chat message costs a few reads and writes, s
    - the static-host domain (`<project>.pages.dev` or `<project>.web.app`)
    - `localhost` if you test Firebase mode locally. Projects created after 2025-04-28 don't include `localhost` by default.
 
-   Remove domains you don't use.
+   Remove domains you don't use. This list also gates the *continue URL* in verification and
+   password-reset emails: if the dashboard's domain is missing, `accounts:sendOobCode` returns 400
+   (`UNAUTHORIZED_DOMAIN`). The app then retries without a continue URL so the email still goes out,
+   but the link lands on Firebase's hosted page instead of returning to the app. Every time the
+   dashboard domain changes, add it here **and** to the API's `FRONTEND_URLS` / `PUBLIC_APP_URL` (§9).
 3. **Authentication → Templates.** Set the sender name, reply-to address and subject lines. Point the
    **action URL** at your app if you handle actions there; the app sends verification links to `/verify-email`.
    You can verify a custom sender domain through DNS. The message body can only be edited for
