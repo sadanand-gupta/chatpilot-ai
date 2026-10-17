@@ -317,6 +317,7 @@ with **Retry**, and never breaks the host page. The dashboard shows a "server wa
 | Option | Cost | Trade-off |
 |---|---|---|
 | Accept cold starts | $0 | First visitor after 15 minutes idle waits about a minute. Fine for a demo, bad for customers. |
+| In-app keep-warm (built in) | $0 | The dashboard pings `/health` on every page load (landing, auth pages, hosted chat) and every ~4.5 min while a signed-in user has a visible tab, so a cold start begins while the visitor reads the page. Auth pages show "Waking up the server…" if `/health` takes over 3 s. Covers active use only. Off against a localhost API. |
 | Ping `/health` every 5 min (UptimeRobot or a cron) | $0 | Keeps one free instance up ~24/7, using about 720–744 of the 750 monthly free hours, so nothing is left for a second free service. Render may still restart it anytime. Render's AUP forbids bypassing usage restrictions, and staff have reportedly called arbitrary keep-awake pinging abuse (not verified on an official page). **Not recommended** for a business. |
 | **Paid Starter instance** | $7/mo | No spin-down. **Recommended for launch.** |
 | Widget on a CDN (step 8) | $0 | The script loads instantly and the retry state is shown while the API wakes up |

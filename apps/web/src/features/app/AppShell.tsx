@@ -19,6 +19,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { useMe } from '@/lib/hooks';
+import { useKeepApiWarm } from '@/lib/keepWarm';
 import { cn, formatNumber, initials } from '@/lib/utils';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -178,6 +179,7 @@ export function DevModeBadge() {
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  useKeepApiWarm();
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
 

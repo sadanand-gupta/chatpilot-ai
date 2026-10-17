@@ -36,7 +36,8 @@ export function createApp(deps: AppDeps): CreatedApp {
     res.on('finish', () => {
       const ms = Number(process.hrtime.bigint() - started) / 1e6;
       const route = req.route?.path ? `${req.baseUrl}${req.route.path}` : req.baseUrl || 'unmatched';
-      const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+      // Successful /health hits (Render health checks, dashboard keep-warm pings) are debug-only noise.
+      const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : req.path === '/health' ? 'debug' : 'info';
       logger[level]({ reqId: req.requestId, method: req.method, route, status: res.statusCode, ms: Math.round(ms) }, 'request');
     });
     next();

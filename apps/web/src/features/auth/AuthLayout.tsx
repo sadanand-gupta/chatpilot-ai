@@ -4,6 +4,8 @@ import { CheckCircle2 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { DevModeBadge } from '@/features/app/AppShell';
 import { appConfig } from '@/lib/config';
+import { useApiWaking } from '@/lib/keepWarm';
+import { Spinner } from '@/components/ui/spinner';
 import { useDocumentTitle } from '@/lib/useDocumentTitle';
 
 const POINTS = [
@@ -28,6 +30,7 @@ export function AuthLayout({
   documentTitle?: string;
 }) {
   useDocumentTitle(documentTitle ?? title);
+  const waking = useApiWaking();
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_1.1fr]">
       <a
@@ -79,6 +82,11 @@ export function AuthLayout({
           {subtitle && <p className="mt-1.5 text-sm text-slate-500">{subtitle}</p>}
           <div className="mt-8">{children}</div>
           {footer && <div className="mt-6 text-center text-sm text-slate-500">{footer}</div>}
+          {waking && (
+            <div className="mt-6 flex justify-center text-slate-400">
+              <Spinner className="h-3.5 w-3.5" label="Waking up the server… the first visit can take up to a minute." />
+            </div>
+          )}
         </div>
       </main>
     </div>
