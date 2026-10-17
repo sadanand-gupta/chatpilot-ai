@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// ChatPilot AI does not use Cloud Storage for Firebase (avatars are https URLs,
+// knowledge is stored as Firestore chunks). Deny all client access.
+// If you add uploads later, route them through the API (signed URLs) or add
+// owner-scoped rules with size/content-type checks plus rules unit tests.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

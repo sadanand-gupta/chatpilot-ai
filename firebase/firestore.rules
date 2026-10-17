@@ -1,0 +1,40 @@
+rules_version = '2';
+
+// ChatPilot AI — Cloud Firestore Security Rules
+//
+// ARCHITECTURE: every read and write goes through the API (apps/api) using the
+// Firebase Admin SDK. The Admin SDK authenticates with a service account and
+// BYPASSES these rules entirely. The web app uses Firebase only for
+// Authentication (client SDK) and never talks to Firestore directly; the
+// embeddable widget never talks to Firebase at all.
+//
+// Therefore the safest possible policy is "deny everything to clients":
+//   * a leaked web API key / project id cannot be used to read tenant data,
+//   * there is no rules logic to get wrong (no tenant-isolation bugs here),
+//   * tenant isolation is enforced in exactly one place: the API's data layer
+//     (every query is scoped by ownerId taken from the verified ID token).
+//
+// HOW TO RELAX LATER (only if you add direct client reads, e.g. realtime
+// listeners in the dashboard). Add narrowly-scoped, read-only rules ABOVE the
+// catch-all and add rules unit tests (firebase/rules-tests) for each one:
+//
+//   match /users/{uid} {
+//     allow read: if request.auth != null && request.auth.uid == uid;
+//   }
+//   match /chatbots/{chatbotId} {
+//     allow read: if request.auth != null
+//                 && resource.data.ownerId == request.auth.uid;
+//   }
+//
+// Keep ALL writes server-side (quotas, plan limits and validation live in the
+// API). Never expose chunks, previewToken, conversations of other owners, or
+// usage documents to clients. Note that rules are not filters: a client query
+// must itself include `where('ownerId', '==', uid)` to satisfy an owner rule.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

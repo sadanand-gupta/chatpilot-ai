@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "your-firebase-project-id",
+    "staging": "your-firebase-project-id-staging"
+  }
+}

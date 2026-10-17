@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" role="img" aria-labelledby="fq-title" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title id="fq-title">Usage controls and quotas</title>
+  <defs>
+    <linearGradient id="fq-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EEF2FF"/><stop offset="1" stop-color="#F5F3FF"/></linearGradient>
+    <linearGradient id="fq-brand" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <filter id="fq-sh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#312E81" flood-opacity=".14"/></filter>
+  </defs>
+  <rect width="240" height="160" rx="20" fill="url(#fq-bg)"/>
+
+  <g filter="url(#fq-sh)"><rect x="28" y="16" width="184" height="130" rx="14" fill="#FFFFFF"/></g>
+  <text x="44" y="38" font-size="12" font-weight="700" fill="#0F172A">Usage</text>
+  <text x="196" y="38" font-size="9.5" fill="#94A3B8" text-anchor="end">This month</text>
+
+  <path d="M76 100a44 44 0 0 1 88 0" fill="none" stroke="#E0E7FF" stroke-width="11" stroke-linecap="round"/>
+  <path d="M76 100a44 44 0 0 1 72 -33.9" fill="none" stroke="url(#fq-brand)" stroke-width="11" stroke-linecap="round"/>
+  <text x="120" y="96" font-size="20" font-weight="800" fill="#0F172A" text-anchor="middle">72%</text>
+  <text x="120" y="118" font-size="10" fill="#475569" text-anchor="middle">7,200 / 10,000 messages</text>
+
+  <path d="M40 126h160" stroke="#F1F5F9"/>
+  <circle cx="48" cy="136" r="3" fill="#10B981"/>
+  <text x="56" y="139.5" font-size="9.5" font-weight="600" fill="#047857">Limits on</text>
+  <text x="196" y="139.5" font-size="9.5" fill="#94A3B8" text-anchor="end">Resets in 9 days</text>
+</svg>

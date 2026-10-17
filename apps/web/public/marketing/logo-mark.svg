@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">ChatPilot AI</title>
+  <defs>
+    <linearGradient id="cp-mark-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="cp-mark-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".22"/>
+      <stop offset=".55" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#cp-mark-bg)"/>
+  <rect width="64" height="64" rx="16" fill="url(#cp-mark-sheen)"/>
+  <!-- chat bubble -->
+  <path d="M15 23a9 9 0 0 1 9-9h16a9 9 0 0 1 9 9v10a9 9 0 0 1-9 9h-8.5L23 49v-7h-.5A7.5 7.5 0 0 1 15 34.5z" fill="#FFFFFF"/>
+  <!-- compass needle: the "pilot" -->
+  <path d="M40 20 34.8 30.8 29.2 25.2z" fill="#4F46E5"/>
+  <path d="M24 36 29.2 25.2 34.8 30.8z" fill="#A5B4FC"/>
+  <circle cx="32" cy="28" r="1.8" fill="#FFFFFF"/>
+  <!-- spark -->
+  <path d="M51 7.5l1.5 3.6 3.6 1.5-3.6 1.5L51 17.7l-1.5-3.6-3.6-1.5 3.6-1.5z" fill="#6EE7B7"/>
+</svg>

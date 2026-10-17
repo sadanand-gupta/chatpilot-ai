@@ -1,0 +1,31 @@
+{
+  "name": "chatpilot-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "ChatPilot AI — generate a website-trained AI chatbot from any business URL",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @chatpilot/api",
+    "dev:web": "npm run dev -w @chatpilot/web",
+    "dev:widget": "npm run dev -w @chatpilot/widget",
+    "build": "npm run build -w @chatpilot/widget && npm run build -w @chatpilot/api && npm run build -w @chatpilot/web",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.15.0",
+    "eslint": "^9.15.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.12.0",
+    "typescript-eslint": "^8.15.0",
+    "@playwright/test": "^1.49.0",
+    "typescript": "^5.6.3"
+  }
+}

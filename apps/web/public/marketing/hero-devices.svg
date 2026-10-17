@@ -1,0 +1,263 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="860" viewBox="0 0 1200 860" role="img" aria-labelledby="hd-title hd-desc" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title id="hd-title">ChatPilot AI widget on desktop and mobile</title>
+  <desc id="hd-desc">A small-business website in a desktop browser with the ChatPilot AI chat widget open, answering a visitor's question about weekend appointments with a cited source, next to a phone showing the same conversation full-screen with lead capture.</desc>
+  <defs>
+    <linearGradient id="hd-brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="hd-brand-h" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="hd-photo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#D1FAE5"/>
+      <stop offset=".55" stop-color="#E0E7FF"/>
+      <stop offset="1" stop-color="#EDE9FE"/>
+    </linearGradient>
+    <radialGradient id="hd-glow-a" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#818CF8" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#818CF8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="hd-glow-b" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#A78BFA" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#A78BFA" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="hd-shadow-lg" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#1E1B4B" flood-opacity=".16"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#0F172A" flood-opacity=".06"/>
+    </filter>
+    <filter id="hd-shadow-md" x="-25%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#312E81" flood-opacity=".22"/>
+    </filter>
+    <filter id="hd-shadow-sm" x="-20%" y="-40%" width="140%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1E1B4B" flood-opacity=".16"/>
+    </filter>
+    <clipPath id="hd-browser-clip"><rect x="16" y="40" width="920" height="600" rx="16"/></clipPath>
+    <clipPath id="hd-panel-clip"><rect x="610" y="214" width="280" height="360" rx="18"/></clipPath>
+    <clipPath id="hd-screen-clip"><rect x="911" y="261" width="258" height="538" rx="31"/></clipPath>
+    <!-- reusable bits -->
+    <g id="hd-doc-icon"><path d="M0 0h6l3 3v8a1 1 0 0 1-1 1H0a1 1 0 0 1-1-1V1a1 1 0 0 1 1-1z" fill="none" stroke="#4F46E5" stroke-width="1.4" stroke-linejoin="round"/><path d="M1.5 6h5M1.5 8.5h5" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round"/></g>
+    <g id="hd-bot-face"><path d="M-6 -3.5a3.5 3.5 0 0 1 3.5-3.5h5a3.5 3.5 0 0 1 3.5 3.5v3a3.5 3.5 0 0 1-3.5 3.5H-1l-3 2.6V3h0a2 2 0 0 1-2-2z" fill="#FFFFFF"/><path d="M2.6 -4.2 0.6 0.3 -1.2 -1.5z" fill="#4F46E5"/><path d="M-2.4 1.4 -1.2 -1.5 0.6 0.3z" fill="#A5B4FC"/></g>
+  </defs>
+
+  <!-- ambient glows -->
+  <circle cx="320" cy="300" r="290" fill="url(#hd-glow-a)"/>
+  <circle cx="940" cy="560" r="250" fill="url(#hd-glow-b)"/>
+
+  <!-- ================= DESKTOP BROWSER ================= -->
+  <g filter="url(#hd-shadow-lg)">
+    <rect x="16" y="40" width="920" height="600" rx="16" fill="#FFFFFF"/>
+  </g>
+  <g clip-path="url(#hd-browser-clip)">
+    <!-- title bar -->
+    <rect x="16" y="40" width="920" height="44" fill="#F1F5F9"/>
+    <path d="M16 84h920" stroke="#E2E8F0"/>
+    <circle cx="42" cy="62" r="6" fill="#F87171"/>
+    <circle cx="62" cy="62" r="6" fill="#FBBF24"/>
+    <circle cx="82" cy="62" r="6" fill="#34D399"/>
+    <path d="M118 58l-4 4 4 4M134 58l4 4-4 4" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="326" y="50" width="300" height="24" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <g transform="translate(418 56)" fill="none" stroke="#10B981" stroke-width="1.4">
+      <rect x="0" y="5" width="9" height="7" rx="1.5" fill="#10B981" stroke="none"/>
+      <path d="M2 5V3.4a2.5 2.5 0 0 1 5 0V5"/>
+    </g>
+    <text x="434" y="66.5" font-size="12.5" fill="#334155">yourbusiness.com</text>
+    <circle cx="894" cy="62" r="2" fill="#94A3B8"/><circle cx="902" cy="62" r="2" fill="#94A3B8"/><circle cx="910" cy="62" r="2" fill="#94A3B8"/>
+
+    <!-- site nav -->
+    <path d="M16 140h920" stroke="#F1F5F9"/>
+    <circle cx="52" cy="112" r="11" fill="#10B981"/>
+    <path d="M47 109c0-3 3-4 5-2.4 2-1.6 5-.6 5 2.4 0 3-2 7-3 7s-1-3-2-3-1 3-2 3-3-4-3-7z" fill="#FFFFFF"/>
+    <text x="72" y="117" font-size="15" font-weight="700" fill="#0F172A">Lakeside Dental</text>
+    <text x="470" y="116" font-size="12.5" fill="#64748B">Services</text>
+    <text x="545" y="116" font-size="12.5" fill="#64748B">Pricing</text>
+    <text x="612" y="116" font-size="12.5" fill="#64748B">About</text>
+    <text x="668" y="116" font-size="12.5" fill="#64748B">Contact</text>
+    <rect x="790" y="97" width="110" height="30" rx="15" fill="#0F172A"/>
+    <text x="845" y="116.5" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">Book now</text>
+
+    <!-- site hero -->
+    <rect x="52" y="168" width="150" height="24" rx="12" fill="#D1FAE5"/>
+    <circle cx="66" cy="180" r="3.5" fill="#10B981"/>
+    <text x="76" y="184.5" font-size="11.5" font-weight="600" fill="#047857">Open 6 days a week</text>
+    <rect x="52" y="208" width="360" height="26" rx="7" fill="#0F172A"/>
+    <rect x="52" y="244" width="290" height="26" rx="7" fill="#0F172A"/>
+    <rect x="52" y="290" width="340" height="9" rx="4.5" fill="#CBD5E1"/>
+    <rect x="52" y="307" width="320" height="9" rx="4.5" fill="#CBD5E1"/>
+    <rect x="52" y="324" width="230" height="9" rx="4.5" fill="#CBD5E1"/>
+    <rect x="52" y="352" width="132" height="38" rx="19" fill="#10B981"/>
+    <text x="118" y="375.5" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">Book a visit</text>
+    <rect x="196" y="352.5" width="124" height="37" rx="18.5" fill="#FFFFFF" stroke="#CBD5E1"/>
+    <text x="258" y="375.5" font-size="12.5" font-weight="600" fill="#334155" text-anchor="middle">Our services</text>
+
+    <!-- hero image block -->
+    <rect x="448" y="160" width="452" height="236" rx="16" fill="url(#hd-photo)"/>
+    <circle cx="510" cy="214" r="24" fill="#FFFFFF" opacity=".8"/>
+    <path d="M448 340c60-50 120-70 190-40s110 10 160-22 80-20 102-4v106a16 16 0 0 1-16 16H464a16 16 0 0 1-16-16z" fill="#A7F3D0" opacity=".75"/>
+    <path d="M448 366c80-34 160-40 240-14s140 6 212-10v38a16 16 0 0 1-16 16H464a16 16 0 0 1-16-16z" fill="#6EE7B7" opacity=".7"/>
+
+    <!-- service cards -->
+    <g>
+      <rect x="52" y="424" width="170" height="176" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="68" y="440" width="36" height="36" rx="10" fill="#ECFDF5"/>
+      <circle cx="86" cy="458" r="8" fill="none" stroke="#10B981" stroke-width="2.4"/>
+      <text x="68" y="502" font-size="13" font-weight="700" fill="#0F172A">Check-ups</text>
+      <rect x="68" y="516" width="130" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="68" y="530" width="110" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="68" y="544" width="80" height="7" rx="3.5" fill="#E2E8F0"/>
+      <text x="68" y="580" font-size="11.5" font-weight="600" fill="#059669">Learn more &#8594;</text>
+    </g>
+    <g>
+      <rect x="238" y="424" width="170" height="176" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="254" y="440" width="36" height="36" rx="10" fill="#EEF2FF"/>
+      <path d="M264 465l8-14 8 14z" fill="none" stroke="#6366F1" stroke-width="2.4" stroke-linejoin="round"/>
+      <text x="254" y="502" font-size="13" font-weight="700" fill="#0F172A">Whitening</text>
+      <rect x="254" y="516" width="128" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="254" y="530" width="100" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="254" y="544" width="116" height="7" rx="3.5" fill="#E2E8F0"/>
+      <text x="254" y="580" font-size="11.5" font-weight="600" fill="#059669">Learn more &#8594;</text>
+    </g>
+    <g>
+      <rect x="424" y="424" width="170" height="176" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <rect x="440" y="440" width="36" height="36" rx="10" fill="#F5F3FF"/>
+      <rect x="450" y="450" width="16" height="16" rx="4" fill="none" stroke="#8B5CF6" stroke-width="2.4"/>
+      <text x="440" y="502" font-size="13" font-weight="700" fill="#0F172A">Implants</text>
+      <rect x="440" y="516" width="122" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="440" y="530" width="132" height="7" rx="3.5" fill="#E2E8F0"/>
+      <rect x="440" y="544" width="90" height="7" rx="3.5" fill="#E2E8F0"/>
+      <text x="440" y="580" font-size="11.5" font-weight="600" fill="#059669">Learn more &#8594;</text>
+    </g>
+
+    <!-- ===== chat widget panel (desktop) ===== -->
+    <g filter="url(#hd-shadow-md)">
+      <rect x="610" y="214" width="280" height="360" rx="18" fill="#FFFFFF"/>
+    </g>
+    <g clip-path="url(#hd-panel-clip)">
+      <rect x="610" y="214" width="280" height="360" fill="#F8FAFC"/>
+      <rect x="610" y="214" width="280" height="58" fill="url(#hd-brand-h)"/>
+      <circle cx="638" cy="243" r="15" fill="#FFFFFF" fill-opacity=".2"/>
+      <use href="#hd-bot-face" transform="translate(638 243) scale(1.25)"/>
+      <text x="661" y="240" font-size="13.5" font-weight="700" fill="#FFFFFF">Lakeside Assistant</text>
+      <circle cx="665" cy="254" r="3" fill="#34D399"/>
+      <text x="672" y="257.5" font-size="10.5" fill="#E0E7FF">Online &#183; replies instantly</text>
+      <path d="M864 237l10 10M874 237l-10 10" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" opacity=".9"/>
+
+      <!-- visitor message -->
+      <path d="M736 284h128a14 14 0 0 1 14 14v18a14 14 0 0 1-14 14h-128a14 14 0 0 1-14-14v-18a14 14 0 0 1 14-14z" fill="url(#hd-brand)"/>
+      <text x="736" y="303" font-size="12" fill="#FFFFFF">Do you offer weekend</text>
+      <text x="736" y="320" font-size="12" fill="#FFFFFF">appointments?</text>
+
+      <!-- bot answer -->
+      <circle cx="632" cy="356" r="12" fill="url(#hd-brand)"/>
+      <use href="#hd-bot-face" transform="translate(632 356) scale(.95)"/>
+      <rect x="652" y="342" width="222" height="68" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+      <text x="665" y="362" font-size="12" fill="#0F172A">Yes! We&#8217;re open Saturdays</text>
+      <text x="665" y="379" font-size="12" fill="#0F172A">9am&#8211;2pm. Would you like to</text>
+      <text x="665" y="396" font-size="12" fill="#0F172A">book a slot?</text>
+
+      <!-- source chip -->
+      <rect x="652" y="418" width="146" height="22" rx="11" fill="#EEF2FF" stroke="#C7D2FE"/>
+      <use href="#hd-doc-icon" transform="translate(663 423)"/>
+      <text x="678" y="433" font-size="10.5" font-weight="500" fill="#4338CA">Source: Contact page</text>
+
+      <!-- suggested questions -->
+      <rect x="652" y="452" width="142" height="26" rx="13" fill="#FFFFFF" stroke="#A5B4FC"/>
+      <text x="723" y="469" font-size="11" font-weight="600" fill="#4F46E5" text-anchor="middle">Book a Saturday slot</text>
+      <rect x="800" y="452" width="78" height="26" rx="13" fill="#FFFFFF" stroke="#A5B4FC"/>
+      <text x="839" y="469" font-size="11" font-weight="600" fill="#4F46E5" text-anchor="middle">See prices</text>
+
+      <text x="750" y="503" font-size="9.5" fill="#94A3B8" text-anchor="middle">Powered by <tspan font-weight="700" fill="#64748B">ChatPilot AI</tspan></text>
+
+      <!-- composer -->
+      <rect x="610" y="518" width="280" height="56" fill="#FFFFFF"/>
+      <path d="M610 518h280" stroke="#E2E8F0"/>
+      <rect x="622" y="529" width="216" height="34" rx="17" fill="#F8FAFC" stroke="#E2E8F0"/>
+      <text x="638" y="550" font-size="11.5" fill="#94A3B8">Ask a question&#8230;</text>
+      <circle cx="861" cy="546" r="17" fill="url(#hd-brand)"/>
+      <path d="M854 546.5l14-6.5-5 14-2.4-5.2z" fill="#FFFFFF"/>
+    </g>
+    <!-- launcher -->
+    <g filter="url(#hd-shadow-sm)">
+      <circle cx="866" cy="606" r="20" fill="url(#hd-brand)"/>
+    </g>
+    <path d="M859 603l7 7 7-7" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- ================= FLOATING LEAD TOAST ================= -->
+  <g filter="url(#hd-shadow-sm)">
+    <rect x="958" y="116" width="222" height="66" rx="16" fill="#FFFFFF"/>
+  </g>
+  <circle cx="988" cy="149" r="15" fill="#D1FAE5"/>
+  <path d="M981.5 149.5l4.5 4.5 8.5-9" fill="none" stroke="#059669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1012" y="144" font-size="13" font-weight="700" fill="#0F172A">New lead captured</text>
+  <text x="1012" y="163" font-size="11" fill="#64748B">sam@mail.com &#183; Sat 10am</text>
+
+  <!-- ================= PHONE ================= -->
+  <g filter="url(#hd-shadow-lg)">
+    <rect x="900" y="250" width="280" height="560" rx="42" fill="#0F172A"/>
+  </g>
+  <rect x="903" y="253" width="274" height="554" rx="39" fill="none" stroke="#334155" stroke-width="1.5"/>
+  <g clip-path="url(#hd-screen-clip)">
+    <rect x="911" y="261" width="258" height="538" fill="#FFFFFF"/>
+    <!-- status bar -->
+    <text x="936" y="288" font-size="12.5" font-weight="700" fill="#0F172A">9:41</text>
+    <g fill="#0F172A">
+      <rect x="1104" y="281" width="3" height="6" rx="1"/><rect x="1109" y="279" width="3" height="8" rx="1"/><rect x="1114" y="277" width="3" height="10" rx="1"/>
+      <rect x="1124" y="277" width="20" height="10" rx="3" fill="none" stroke="#0F172A" stroke-width="1.2"/>
+      <rect x="1126" y="279" width="14" height="6" rx="1.5"/>
+      <rect x="1145" y="280" width="1.8" height="4" rx=".9"/>
+    </g>
+    <!-- mobile site header -->
+    <circle cx="932" cy="318" r="9" fill="#10B981"/>
+    <path d="M928 316c0-2.4 2.4-3.2 4-1.9 1.6-1.3 4-.5 4 1.9 0 2.4-1.6 5.6-2.4 5.6s-.8-2.4-1.6-2.4-.8 2.4-1.6 2.4-2.4-3.2-2.4-5.6z" fill="#FFFFFF"/>
+    <text x="948" y="322.5" font-size="12.5" font-weight="700" fill="#0F172A">Lakeside Dental</text>
+    <path d="M1136 312h16M1136 318h16M1136 324h16" stroke="#0F172A" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="911" y="336" width="258" height="12" fill="#0F172A" opacity=".06"/>
+
+    <!-- full-screen chat sheet -->
+    <path d="M911 364a20 20 0 0 1 20-20h218a20 20 0 0 1 20 20v435H911z" fill="#F8FAFC"/>
+    <path d="M911 364a20 20 0 0 1 20-20h218a20 20 0 0 1 20 20v36H911z" fill="url(#hd-brand-h)"/>
+    <circle cx="938" cy="372" r="14" fill="#FFFFFF" fill-opacity=".2"/>
+    <use href="#hd-bot-face" transform="translate(938 372) scale(1.15)"/>
+    <text x="960" y="369" font-size="13" font-weight="700" fill="#FFFFFF">Lakeside Assistant</text>
+    <circle cx="964" cy="382" r="2.8" fill="#34D399"/>
+    <text x="970" y="385.5" font-size="10.5" fill="#E0E7FF">Online</text>
+    <path d="M1141 369l6 6 6-6" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- visitor -->
+    <rect x="1002" y="412" width="154" height="46" rx="14" fill="url(#hd-brand)"/>
+    <text x="1014" y="431" font-size="12" fill="#FFFFFF">Do you offer weekend</text>
+    <text x="1014" y="448" font-size="12" fill="#FFFFFF">appointments?</text>
+    <!-- bot -->
+    <rect x="922" y="468" width="212" height="68" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="934" y="488" font-size="12" fill="#0F172A">Yes! We&#8217;re open Saturdays</text>
+    <text x="934" y="505" font-size="12" fill="#0F172A">9am&#8211;2pm. Would you like to</text>
+    <text x="934" y="522" font-size="12" fill="#0F172A">book a slot?</text>
+    <rect x="922" y="543" width="146" height="22" rx="11" fill="#EEF2FF" stroke="#C7D2FE"/>
+    <use href="#hd-doc-icon" transform="translate(933 548)"/>
+    <text x="948" y="558" font-size="10.5" font-weight="500" fill="#4338CA">Source: Contact page</text>
+    <!-- visitor 2 -->
+    <rect x="990" y="576" width="166" height="32" rx="14" fill="url(#hd-brand)"/>
+    <text x="1073" y="596.5" font-size="12" fill="#FFFFFF" text-anchor="middle">Saturday 10am, please</text>
+    <!-- bot lead capture -->
+    <rect x="922" y="618" width="212" height="102" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+    <text x="934" y="638" font-size="12" fill="#0F172A">Great! Where should we send</text>
+    <text x="934" y="655" font-size="12" fill="#0F172A">your confirmation?</text>
+    <rect x="934" y="667" width="188" height="40" rx="10" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="944" y="691" font-size="11.5" fill="#94A3B8">Email address</text>
+    <rect x="1074" y="673" width="42" height="28" rx="8" fill="url(#hd-brand)"/>
+    <text x="1095" y="691.5" font-size="11" font-weight="700" fill="#FFFFFF" text-anchor="middle">Send</text>
+
+    <!-- composer -->
+    <path d="M911 734h258" stroke="#E2E8F0"/>
+    <rect x="911" y="734.5" width="258" height="64.5" fill="#FFFFFF"/>
+    <rect x="922" y="744" width="196" height="36" rx="18" fill="#F8FAFC" stroke="#E2E8F0"/>
+    <text x="938" y="766" font-size="11.5" fill="#94A3B8">Ask a question&#8230;</text>
+    <circle cx="1145" cy="762" r="17" fill="url(#hd-brand)"/>
+    <path d="M1138 762.5l14-6.5-5 14-2.4-5.2z" fill="#FFFFFF"/>
+    <rect x="990" y="788" width="100" height="5" rx="2.5" fill="#0F172A"/>
+  </g>
+  <!-- dynamic island -->
+  <rect x="1000" y="270" width="80" height="24" rx="12" fill="#0F172A"/>
+</svg>

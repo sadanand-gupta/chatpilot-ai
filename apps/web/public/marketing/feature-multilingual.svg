@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160" role="img" aria-labelledby="fm-title" font-family="Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <title id="fm-title">Multilingual answers</title>
+  <defs>
+    <linearGradient id="fm-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#EEF2FF"/><stop offset="1" stop-color="#F5F3FF"/></linearGradient>
+    <linearGradient id="fm-brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4F46E5"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <filter id="fm-sh" x="-30%" y="-50%" width="160%" height="220%"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#312E81" flood-opacity=".14"/></filter>
+  </defs>
+  <rect width="240" height="160" rx="20" fill="url(#fm-bg)"/>
+
+  <ellipse cx="120" cy="80" rx="78" ry="48" fill="none" stroke="#C7D2FE" stroke-dasharray="3 4"/>
+  <g filter="url(#fm-sh)"><circle cx="120" cy="80" r="26" fill="url(#fm-brand)"/></g>
+  <g fill="none" stroke="#FFFFFF" stroke-width="1.8">
+    <circle cx="120" cy="80" r="12"/>
+    <ellipse cx="120" cy="80" rx="5" ry="12"/>
+    <path d="M108 80h24M110 73.5h20M110 86.5h20" stroke-width="1.4"/>
+  </g>
+
+  <g filter="url(#fm-sh)">
+    <path d="M24 24h46a10 10 0 0 1 10 10v4a10 10 0 0 1-10 10H34l-6 5v-5.6A10 10 0 0 1 24 38v-4z" fill="#FFFFFF"/>
+    <path d="M158 18h56a10 10 0 0 1 10 10v4a10 10 0 0 1-10 10h-4v5.6l-6-5.6h-46a10 10 0 0 1-10-10v-4a10 10 0 0 1 10-10z" fill="url(#fm-brand)"/>
+    <path d="M22 110h64a10 10 0 0 1 10 10v4a10 10 0 0 1-10 10H32a10 10 0 0 1-10-10v-4a10 10 0 0 1 10-10z" fill="#FFFFFF"/>
+    <path d="M166 112h44a10 10 0 0 1 10 10v4a10 10 0 0 1-10 10h-44a10 10 0 0 1-10-10v-4a10 10 0 0 1 10-10z" fill="#FFFFFF"/>
+  </g>
+  <text x="34" y="40" font-size="11.5" font-weight="600" fill="#312E81">Hello</text>
+  <text x="186" y="34" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">&#161;Hola!</text>
+  <text x="54" y="126" font-size="11.5" font-weight="600" fill="#312E81" text-anchor="middle">Bonjour</text>
+  <text x="188" y="128" font-size="11.5" font-weight="600" fill="#312E81" text-anchor="middle">Ol&#225;</text>
+</svg>
