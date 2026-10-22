@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QuotaNotice } from '@/components/QuotaNotice';
+import { InstallDemo } from './InstallDemo';
 import { useChatbot, useSourcesSummary } from './lib';
 
 export interface PublishPanelProps {
@@ -238,7 +239,7 @@ export function PublishPanel({ chatbot: initial, hasUnsavedConfig = false, onPub
             </Card>
           </div>
 
-          <InstallInstructions embedCode={embedCode} />
+          <InstallInstructions embedCode={embedCode} config={chatbot.config} />
           <Troubleshooting />
         </>
       )}
@@ -363,22 +364,22 @@ const PLATFORMS: { id: string; label: string; steps: (string | { code: true })[]
   },
   {
     id: 'react',
-    label: 'React / Next.js',
+    label: 'React / Next.js / Vue',
     steps: [
       'Next.js (App Router): in app/layout.tsx import Script from "next/script" and render <Script src="…widget.js" data-chatbot-id="…" data-api-url="…" strategy="afterInteractive" /> inside <body>, using the values from the embed code.',
       'Next.js (Pages Router): add the same <Script> in pages/_app.tsx.',
-      'Vite / CRA: paste the embed code before </body> in index.html.',
+      'Vite / CRA / Vue: paste the embed code before </body> in index.html.',
       'Load it once at the root — not inside a component that re-mounts on navigation.',
     ],
   },
 ];
 
-function InstallInstructions({ embedCode }: { embedCode: string }) {
+function InstallInstructions({ embedCode, config }: { embedCode: string; config: Chatbot['config'] }) {
   return (
     <Card className="rounded-2xl">
       <CardHeader>
         <CardTitle className="text-base">Installation guides</CardTitle>
-        <CardDescription>Pick your platform.</CardDescription>
+        <CardDescription>Pick your platform and watch the short walkthrough.</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="html">
@@ -392,7 +393,14 @@ function InstallInstructions({ embedCode }: { embedCode: string }) {
             </TabsList>
           </div>
           {PLATFORMS.map((p) => (
-            <TabsContent key={p.id} value={p.id}>
+            <TabsContent key={p.id} value={p.id} className="space-y-4">
+              <InstallDemo
+                platform={p.id}
+                embedCode={embedCode}
+                botName={config.botName}
+                welcomeMessage={config.welcomeMessage}
+                primaryColor={config.primaryColor}
+              />
               <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-700 marker:text-slate-400">
                 {p.steps.map((s, i) =>
                   typeof s === 'string' ? (
