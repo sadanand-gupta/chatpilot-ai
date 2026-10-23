@@ -9,11 +9,11 @@ export const DEFAULT_PLANS: Plan[] = [
   {
     id: 'free',
     name: 'Free Trial',
-    description: 'Try ChatPilot on one website.',
+    description: 'Try ChatPilot with up to 5 chatbots.',
     priceMonthly: 0,
     currency: 'INR',
     limits: {
-      chatbots: 1,
+      chatbots: 5,
       messagesPerMonth: 100,
       crawlsPerMonth: 5,
       pagesPerCrawl: 15,

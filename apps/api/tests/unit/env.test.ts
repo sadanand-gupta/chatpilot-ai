@@ -54,6 +54,6 @@ describe('env / production guard', () => {
     const env = loadEnv({ NODE_ENV: 'test', AUTH_MODE: 'dev', DATA_STORE: 'file', AI_PROVIDER: 'mock', PLANS_JSON: JSON.stringify([{ id: 'free', limits: { messagesPerMonth: 3 } }]) });
     const free = env.plansOverride!.find((p) => p.id === 'free')!;
     expect(free.limits.messagesPerMonth).toBe(3);
-    expect(free.limits.chatbots).toBe(1);
+    expect(free.limits.chatbots).toBe(5);
   });
 });

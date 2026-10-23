@@ -31,7 +31,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a free plan?',
-    a: 'Yes — the free trial plan lets you build, preview and publish a chatbot for one website with monthly limits shown in the pricing table above. No credit card is required.',
+    a: 'Yes — the free trial plan lets you build, preview and publish up to 5 chatbots with monthly limits shown in the pricing table above. No credit card is required.',
   },
 ];
 
