@@ -5,6 +5,7 @@ import type { AppContext } from '../context';
 import { asyncHandler, clientIp } from '../lib/http';
 import type { RateLimiters } from '../middleware/rateLimit';
 import { validateBody } from '../middleware/validate';
+import { userAgentOf } from '../services/activity';
 
 /** Preview token from the X-Preview-Token header (preferred) or the legacy query/body field. */
 const previewTokenOf = (req: Request, fallback?: unknown): string | undefined => {
@@ -60,7 +61,7 @@ export function publicRoutes(ctx: AppContext, rl: RateLimiters): Router {
     rl.demo,
     validateBody(demoInputSchema),
     asyncHandler(async (req, res) => {
-      res.status(201).json(await ctx.demo.create(req.body.url, clientIp(req)));
+      res.status(201).json(await ctx.demo.create(req.body.url, clientIp(req), userAgentOf(req)));
     }),
   );
 

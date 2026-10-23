@@ -4,21 +4,23 @@ import { z } from 'zod';
 import type { AppContext } from '../context';
 import { asyncHandler, isoDateParam, paginationQuery } from '../lib/http';
 import { validateBody } from '../middleware/validate';
+import { actorOf } from '../services/activity';
 
 /** /api/me, /api/plans, /api/dashboard, /api/conversations, /api/leads */
 export function accountRoutes(ctx: AppContext): Router {
   const r = Router();
 
   r.get('/me', asyncHandler(async (req, res) => {
-    res.json(await ctx.users.me(req.user!));
+    res.json({ ...(await ctx.users.me(req.user!)), isAdmin: !!req.isAdmin });
   }));
 
   r.patch('/me', validateBody(updateProfileSchema), asyncHandler(async (req, res) => {
-    res.json(await ctx.users.updateProfile(req.user!, req.body));
+    res.json({ ...(await ctx.users.updateProfile(req.user!, req.body)), isAdmin: !!req.isAdmin });
   }));
 
   r.delete('/me', asyncHandler(async (req, res) => {
     await ctx.users.deleteAccount(req.user!.uid);
+    await ctx.activity.log({ type: 'account_deleted', ...actorOf(req) });
     res.json({ ok: true });
   }));
 

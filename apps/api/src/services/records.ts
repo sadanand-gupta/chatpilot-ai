@@ -14,7 +14,7 @@ import type { PlanService } from './plans';
 const SEARCH_SCAN_PAGES = 5;
 const SEARCH_PAGE = 100;
 
-async function searchWindow<T extends { id: string }>(
+export async function searchWindow<T extends { id: string }>(
   fetch: (limit: number, cursor?: string) => Promise<Page<T>>,
   match: (item: T) => boolean,
   sortValue: (item: T) => string,
@@ -42,7 +42,7 @@ async function searchWindow<T extends { id: string }>(
 
 const norm = (s: string | undefined) => (s ?? '').toLowerCase();
 
-function toConversation(c: ConversationRecord): Conversation {
+export function toConversation(c: ConversationRecord): Conversation {
   return {
     id: c.id,
     chatbotId: c.chatbotId,

@@ -28,6 +28,8 @@ const DATE_FIELDS = new Set([
   'startedAt',
   'finishedAt',
   'lastSeenAt',
+  'lastSignInAt',
+  'lastActiveAt',
   'resetAt',
 ]);
 

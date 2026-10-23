@@ -14,6 +14,7 @@ import { AppError, badRequest, forbidden, notFound } from '../lib/errors';
 import { safeEqual, signConversationToken, verifyConversationToken } from '../lib/hmac';
 import { newId } from '../lib/ids';
 import type { Logger } from '../lib/logger';
+import type { ActivityService } from './activity';
 import type { ChatService } from './chat';
 import type { PlanService } from './plans';
 import type { UsageService } from './usage';
@@ -63,6 +64,7 @@ export class PublicChatService {
     private readonly usage: UsageService,
     private readonly chat: ChatService,
     private readonly logger: Logger,
+    private readonly activity?: ActivityService,
   ) {
     this.appOrigins = new Set([...env.FRONTEND_URLS, env.PUBLIC_APP_URL].map((u) => {
       try {
@@ -259,6 +261,7 @@ export class PublicChatService {
     if (!conv) botPatch['stats.conversations'] = increment(1);
     if (resolved.isDemo) botPatch.demoMessages = increment(1);
     if (Object.keys(botPatch).length) await this.store.updateChatbot(bot.id, botPatch).catch(() => undefined);
+    if (resolved.isDemo) await this.activity?.demoMessage(bot.id);
     if (!resolved.isDemo) {
       await this.usage.record(bot.ownerId, {
         messages: 1,

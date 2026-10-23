@@ -1,4 +1,6 @@
 import type {
+  ActivityEvent,
+  ActivityEventType,
   Chatbot,
   ChatbotConfig,
   ChatMessage,
@@ -81,6 +83,11 @@ export interface LeadQuery extends ListOpts {
   chatbotId?: string;
 }
 
+export interface ActivityQuery extends ListOpts {
+  type?: ActivityEventType;
+  uid?: string;
+}
+
 export interface SourceWithChunks {
   source: KnowledgeSource;
   chunks: KnowledgeChunk[];
@@ -93,6 +100,23 @@ export interface Store {
   createUser(user: UserProfile): Promise<void>;
   updateUser(uid: string, patch: Partial<UserProfile>): Promise<void>;
   listUsers(limit: number, afterUid?: string): Promise<UserProfile[]>;
+  /** Records activity: always bumps lastActiveAt; a new session also bumps lastSignInAt + signInCount. */
+  touchUser(uid: string, at: string, newSession: boolean): Promise<void>;
+  // activity log (admin console)
+  addActivity(event: ActivityEvent): Promise<void>;
+  updateActivity(id: string, patch: Record<string, unknown>): Promise<void>;
+  listActivity(q: ActivityQuery): Promise<Page<ActivityEvent>>;
+  activitySince(fromIso: string, max: number): Promise<Pick<ActivityEvent, 'type' | 'createdAt'>[]>;
+  deleteActivityBefore(beforeIso: string): Promise<number>;
+  // cross-tenant reads — ADMIN CONSOLE ONLY, never reachable from tenant routes
+  listUsersNewest(opts: ListOpts): Promise<Page<UserProfile>>;
+  countUsers(activeSinceIso?: string): Promise<number>;
+  userCreatedDates(fromIso: string, max: number): Promise<string[]>;
+  listTenantChatbots(opts: ListOpts): Promise<Page<ChatbotRecord>>;
+  countTenantChatbots(status?: Chatbot['status']): Promise<number>;
+  listAllConversations(q: ConversationQuery): Promise<Page<ConversationRecord>>;
+  listAllLeads(opts: ListOpts): Promise<Page<Lead>>;
+  countAll(collection: 'conversations' | 'leads'): Promise<number>;
   // plans
   listPlanDocs(): Promise<Partial<Plan>[]>;
   // chatbots
@@ -222,6 +246,56 @@ export function createStore(db: DocDB): Store {
       const rows = await db.query<UserProfile>('users', { limit, startAfter: afterUid ? { value: afterUid, id: afterUid } : undefined });
       return rows.map((r) => ({ ...r.data, uid: r.id }));
     },
+    touchUser: (uid, at, newSession) =>
+      db.update(`users/${uid}`, newSession ? { lastActiveAt: at, lastSignInAt: at, signInCount: increment(1) } : { lastActiveAt: at }),
+
+    // ---------- activity log
+    addActivity: (event) => db.set(`activityEvents/${event.id}`, { ...event }),
+    updateActivity: (id, patch) => db.update(`activityEvents/${id}`, patch),
+    async listActivity(q) {
+      const where: Where[] = [];
+      if (q.type) where.push(['type', '==', q.type]);
+      if (q.uid) where.push(['uid', '==', q.uid]);
+      return page<ActivityEvent>('activityEvents', where, 'createdAt', 'desc', q);
+    },
+    async activitySince(fromIso, max) {
+      const rows = await db.query<Pick<ActivityEvent, 'type' | 'createdAt'>>('activityEvents', {
+        where: [['createdAt', '>=', fromIso]],
+        orderBy: { field: 'createdAt', dir: 'desc' },
+        limit: max,
+        select: ['type', 'createdAt'],
+      });
+      return rows.map((r) => r.data);
+    },
+    deleteActivityBefore: (beforeIso) => deleteWhere('activityEvents', [['createdAt', '<', beforeIso]]),
+
+    // ---------- admin (cross-tenant)
+    async listUsersNewest(opts) {
+      const res = await page<UserProfile & { id?: string }>('users', [], 'createdAt', 'desc', opts);
+      return { items: res.items.map(({ id, ...u }) => ({ ...u, uid: id! })), nextCursor: res.nextCursor };
+    },
+    countUsers: (activeSinceIso) => db.count('users', activeSinceIso ? [['lastActiveAt', '>=', activeSinceIso]] : []),
+    async userCreatedDates(fromIso, max) {
+      const rows = await db.query<{ createdAt: string }>('users', {
+        where: [['createdAt', '>=', fromIso]],
+        orderBy: { field: 'createdAt', dir: 'desc' },
+        limit: max,
+        select: ['createdAt'],
+      });
+      return rows.map((r) => r.data.createdAt);
+    },
+    listTenantChatbots: (opts) => page<ChatbotRecord>('chatbots', [['isDemo', '==', false]], 'createdAt', 'desc', opts),
+    countTenantChatbots(status) {
+      const where: Where[] = [['isDemo', '==', false]];
+      if (status) where.push(['status', '==', status]);
+      return db.count('chatbots', where);
+    },
+    listAllConversations(q) {
+      const where: Where[] = q.chatbotId ? [['chatbotId', '==', q.chatbotId]] : [];
+      return page<ConversationRecord>('conversations', where, 'lastMessageAt', 'desc', q);
+    },
+    listAllLeads: (opts) => page<Lead>('leads', [], 'createdAt', 'desc', opts),
+    countAll: (collection) => db.count(collection),
 
     // ---------- plans
     async listPlanDocs() {

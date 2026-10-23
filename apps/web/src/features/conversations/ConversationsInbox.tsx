@@ -67,7 +67,7 @@ function ConversationListItem({ c, active, chatbotName, onSelect }: { c: Convers
   );
 }
 
-function MessageBubble({ m }: { m: ChatMessage }) {
+export function MessageBubble({ m }: { m: ChatMessage }) {
   const isUser = m.role === 'user';
   return (
     <div className={cn('flex gap-2.5', isUser && 'flex-row-reverse')}>

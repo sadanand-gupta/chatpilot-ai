@@ -80,14 +80,15 @@ export function devRoutes(ctx: AppContext, rl: RateLimiters): Router {
   return r;
 }
 
-export function adminRoutes(ctx: AppContext): Router {
+/** Operator endpoints for schedulers/scripts, authenticated with the X-Admin-Token header. */
+export function adminTokenRoutes(ctx: AppContext): Router {
   const r = Router();
-  r.use((req, _res, next) => {
+  const requireToken = (req: Request, _res: Response, next: (err?: unknown) => void) => {
     const token = req.headers['x-admin-token'];
     if (!ctx.env.ADMIN_TOKEN || typeof token !== 'string' || !safeEqual(token, ctx.env.ADMIN_TOKEN)) return next(unauthorized('Admin token required'));
     next();
-  });
-  r.post('/cleanup', asyncHandler(async (_req, res) => {
+  };
+  r.post('/cleanup', requireToken, asyncHandler(async (_req, res) => {
     res.json({ ok: true, ...(await ctx.cleanup.run()) });
   }));
   return r;

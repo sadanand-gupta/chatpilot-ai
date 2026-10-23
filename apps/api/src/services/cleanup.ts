@@ -4,7 +4,7 @@ import type { Retriever } from '../knowledge/retriever';
 import type { PlanService } from './plans';
 
 /**
- * Retention + demo expiry. Firestore TTL on `expiresAt` deletes top-level demo
+ * Retention + demo expiry + activity-log retention (ACTIVITY_RETENTION_DAYS). Firestore TTL on `expiresAt` deletes top-level demo
  * docs eventually (Blaze plan only) but never subcollections, so this job
  * cascade-deletes expired demo bots (sources, chunks, crawlJobs, versions,
  * conversations, publicConfigs pointer) and conversations older than the
@@ -19,13 +19,15 @@ export class CleanupService {
     private readonly plans: PlanService,
     private readonly retriever: Retriever,
     private readonly logger: Logger,
+    private readonly activityRetentionDays = 180,
   ) {}
 
-  async run(): Promise<{ expiredDemos: number; conversationsDeleted: number }> {
-    if (this.running) return { expiredDemos: 0, conversationsDeleted: 0 };
+  async run(): Promise<{ expiredDemos: number; conversationsDeleted: number; activityDeleted: number }> {
+    if (this.running) return { expiredDemos: 0, conversationsDeleted: 0, activityDeleted: 0 };
     this.running = true;
     let expiredDemos = 0;
     let conversationsDeleted = 0;
+    let activityDeleted = 0;
     try {
       const now = new Date().toISOString();
       for (let i = 0; i < 20; i++) {
@@ -55,11 +57,12 @@ export class CleanupService {
         after = users[users.length - 1].uid;
         if (users.length < 200) break;
       }
-      if (expiredDemos || conversationsDeleted) this.logger.info({ expiredDemos, conversationsDeleted }, 'cleanup finished');
+      activityDeleted = await this.store.deleteActivityBefore(new Date(Date.now() - this.activityRetentionDays * 86_400_000).toISOString());
+      if (expiredDemos || conversationsDeleted || activityDeleted) this.logger.info({ expiredDemos, conversationsDeleted, activityDeleted }, 'cleanup finished');
     } finally {
       this.running = false;
     }
-    return { expiredDemos, conversationsDeleted };
+    return { expiredDemos, conversationsDeleted, activityDeleted };
   }
 
   start(intervalMs: number): void {

@@ -5,6 +5,8 @@ import type { Store } from './data/store';
 import type { Logger } from './lib/logger';
 import { BM25Retriever, type Retriever } from './knowledge/retriever';
 import type { TokenVerifier } from './middleware/auth';
+import { ActivityService } from './services/activity';
+import { AdminService } from './services/admin';
 import { ChatService } from './services/chat';
 import { ChatbotService } from './services/chatbots';
 import { CleanupService } from './services/cleanup';
@@ -42,6 +44,8 @@ export interface AppContext {
   plans: PlanService;
   usage: UsageService;
   users: UserService;
+  activity: ActivityService;
+  admin: AdminService;
   knowledge: KnowledgeService;
   crawls: CrawlService;
   chat: ChatService;
@@ -66,6 +70,7 @@ export function buildContext(deps: AppDeps): AppContext {
   const plans = new PlanService(store, env.plansOverride, logger);
   const usage = new UsageService(store);
   const users = new UserService(store, plans, usage, logger, deps.deleteAuthUser);
+  const activity = new ActivityService(store, logger);
   const knowledge = new KnowledgeService(store, retriever, logger);
   const userAgent = `ChatPilotBot/1.0 (+${env.PUBLIC_APP_URL}/bot)`;
   const frameChecker = new FrameChecker(
@@ -76,11 +81,12 @@ export function buildContext(deps: AppDeps): AppContext {
   const crawls = new CrawlService(env, store, queue, demoQueue, knowledge, usage, frameChecker, logger, overrides);
   const chat = new ChatService(env, retriever, ai, logger);
   const chatbots = new ChatbotService(env, store, plans, usage, crawls, chat, retriever, logger);
-  const publicChat = new PublicChatService(env, store, plans, usage, chat, logger);
+  const publicChat = new PublicChatService(env, store, plans, usage, chat, logger, activity);
   const records = new RecordsService(store, plans);
-  const demo = new DemoService(env, store, crawls, chatbots, logger);
+  const demo = new DemoService(env, store, crawls, chatbots, logger, activity);
   const stats = new StatsService(store, plans, usage);
-  const cleanup = new CleanupService(store, plans, retriever, logger);
+  const cleanup = new CleanupService(store, plans, retriever, logger, env.ACTIVITY_RETENTION_DAYS);
+  const admin = new AdminService(store, plans, usage, users, activity, retriever, env.ADMIN_EMAILS, logger);
   return {
     env,
     store,
@@ -92,6 +98,8 @@ export function buildContext(deps: AppDeps): AppContext {
     plans,
     usage,
     users,
+    activity,
+    admin,
     knowledge,
     crawls,
     chat,

@@ -72,6 +72,8 @@ export const routes = [
           { path: 'leads', element: <InApp><P.LeadsPage /></InApp> },
           { path: 'billing', element: <InApp><P.BillingPage /></InApp> },
           { path: 'settings', element: <InApp><P.SettingsPage /></InApp> },
+          { path: 'admin', element: <InApp><P.AdminPage /></InApp> },
+          { path: 'admin/users/:uid', element: <InApp><P.AdminUserPage /></InApp> },
           { path: '*', element: <InApp><P.NotFoundPage inApp /></InApp> },
         ],
       },

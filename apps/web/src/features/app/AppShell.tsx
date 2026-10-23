@@ -12,11 +12,14 @@ import {
   MessagesSquare,
   Plus,
   Settings,
+  ShieldAlert,
+  ShieldCheck,
   UserRound,
   Users,
   X,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { isApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useMe } from '@/lib/hooks';
 import { useKeepApiWarm } from '@/lib/keepWarm';
@@ -45,10 +48,14 @@ const NAV = [
   { to: '/app/settings', label: 'Settings', icon: Settings, end: false },
 ] as const;
 
+const ADMIN_NAV = { to: '/app/admin', label: 'Admin console', icon: ShieldCheck, end: false } as const;
+
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { data } = useMe();
+  const items = data?.isAdmin ? [...NAV, ADMIN_NAV] : NAV;
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
-      {NAV.map(({ to, label, icon: Icon, end }) => (
+      {items.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -148,6 +155,11 @@ function UserMenu() {
         <DropdownMenuItem onSelect={() => navigate('/app/billing')}>
           <CreditCard /> Usage & plan
         </DropdownMenuItem>
+        {data?.isAdmin && (
+          <DropdownMenuItem onSelect={() => navigate('/app/admin')}>
+            <ShieldCheck /> Admin console
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           destructive
@@ -176,12 +188,48 @@ export function DevModeBadge() {
   );
 }
 
+/** Shown instead of the app when a platform admin suspended this account. */
+function AccountSuspended() {
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  return (
+    <div className="flex min-h-dvh items-center justify-center bg-slate-50 px-4">
+      <div role="alert" className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <ShieldAlert className="mx-auto h-10 w-10 text-red-500" aria-hidden="true" />
+        <h1 className="mt-4 font-display text-xl font-bold text-slate-900">Account suspended</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Your access to the dashboard has been suspended. If you think this is a mistake, please{' '}
+          <Link to="/contact" className="font-medium text-brand-600 hover:underline">
+            contact us
+          </Link>
+          .
+        </p>
+        <Button
+          variant="outline"
+          className="mt-6"
+          onClick={async () => {
+            await signOut();
+            queryClient.clear();
+            navigate('/login', { replace: true });
+          }}
+        >
+          <LogOut /> Sign out
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const me = useMe();
   useKeepApiWarm();
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
+
+  if (isApiError(me.error) && me.error.code === 'account_suspended') return <AccountSuspended />;
 
   return (
     <div className="min-h-dvh bg-slate-50">

@@ -1,8 +1,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { UserProfile } from '@chatpilot/shared';
 import { jwtVerify, SignJWT } from 'jose';
-import { AppError, unauthorized } from '../lib/errors';
+import { accountSuspended, AppError, forbidden, unauthorized } from '../lib/errors';
 import { devUidFromEmail } from '../lib/ids';
+import type { ActivityService } from '../services/activity';
 import type { UserService } from '../services/users';
 
 declare global {
@@ -10,6 +11,8 @@ declare global {
   namespace Express {
     interface Request {
       user?: UserProfile;
+      /** Platform admin: the verified token's email is listed in ADMIN_EMAILS. */
+      isAdmin?: boolean;
       requestId?: string;
     }
   }
@@ -102,12 +105,23 @@ export function allowUnverifiedDefault(req: Request): boolean {
   return req.path === '/me' && (req.method === 'GET' || req.method === 'PATCH' || req.method === 'HEAD' || req.method === 'OPTIONS');
 }
 
-export function requireAuth(
-  verifier: TokenVerifier,
-  users: UserService,
-  opts: { allowUnverified?: (req: Request) => boolean } = {},
-) {
+/** Admin status comes from the verified ID token, never from stored profile data. */
+export function isAdminIdentity(identity: Pick<VerifiedIdentity, 'email' | 'emailVerified'>, adminEmails: readonly string[]): boolean {
+  const email = identity.email.trim().toLowerCase();
+  return identity.emailVerified && email !== '' && adminEmails.includes(email);
+}
+
+export interface RequireAuthOptions {
+  allowUnverified?: (req: Request) => boolean;
+  /** Lowercase emails of platform admins (ADMIN_EMAILS). */
+  adminEmails?: readonly string[];
+  /** Records sessions for the admin console's activity log. */
+  activity?: ActivityService;
+}
+
+export function requireAuth(verifier: TokenVerifier, users: UserService, opts: RequireAuthOptions = {}) {
   const allowUnverified = opts.allowUnverified ?? allowUnverifiedDefault;
+  const adminEmails = opts.adminEmails ?? [];
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const header = req.headers.authorization ?? '';
@@ -122,9 +136,17 @@ export function requireAuth(
       if (verifier.mode === 'firebase' && !ALLOWED_SIGN_IN_PROVIDERS.has(identity.signInProvider ?? '')) throw googleSignInRequired();
       if (!identity.emailVerified && !allowUnverified(req)) throw emailNotVerified();
       req.user = await users.ensureUser(identity.uid, identity.email, identity.name);
+      req.isAdmin = isAdminIdentity(identity, adminEmails);
+      if (opts.activity) await opts.activity.touch(req.user, req);
+      if (req.user.suspended && !req.isAdmin) throw accountSuspended();
       next();
     } catch (e) {
       next(e);
     }
   };
+}
+
+/** Mount after requireAuth: only platform admins pass. */
+export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
+  next(req.isAdmin ? undefined : forbidden('Admin access only.'));
 }

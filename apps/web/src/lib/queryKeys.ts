@@ -24,4 +24,6 @@ export const qk = {
   conversations: (filters: ConversationFilters = {}) => ['conversations', filters] as const,
   conversation: (id: string) => ['conversation', id] as const,
   leads: (filters: LeadFilters = {}) => ['leads', filters] as const,
+  /** Platform admin console; invalidate ['admin'] after any admin mutation. */
+  admin: (...parts: unknown[]) => ['admin', ...parts] as const,
 };

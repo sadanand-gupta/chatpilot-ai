@@ -19,8 +19,53 @@ export interface UserProfile {
   displayName?: string;
   businessName?: string;
   planId: PlanId;
+  /** Start of the most recent session (a sign-in, or a return after 30+ minutes away). */
+  lastSignInAt?: ISODate;
+  /** Last authenticated request; refreshed at most every few minutes. */
+  lastActiveAt?: ISODate;
+  /** Number of sessions so far. */
+  signInCount?: number;
+  /** Set by a platform admin: every private request is refused while true. */
+  suspended?: boolean;
   createdAt: ISODate;
   updatedAt: ISODate;
+}
+
+export type ActivityEventType =
+  | 'sign_up'
+  | 'sign_in'
+  | 'demo_started'
+  | 'chatbot_created'
+  | 'chatbot_published'
+  | 'chatbot_deleted'
+  | 'account_deleted'
+  | 'admin_plan_changed'
+  | 'admin_user_suspended'
+  | 'admin_user_restored'
+  | 'admin_user_deleted'
+  | 'admin_chatbot_deleted';
+
+/** activityEvents/{id} — the platform-wide audit log shown in the admin console. */
+export interface ActivityEvent {
+  id: string;
+  type: ActivityEventType;
+  /** The account the event is about (absent for anonymous landing-page demos). */
+  uid?: string;
+  email?: string;
+  /** Admin who performed an admin_* action. */
+  actorEmail?: string;
+  ip?: string;
+  userAgent?: string;
+  /** Website involved: the demo URL or the chatbot's website. */
+  url?: string;
+  chatbotId?: string;
+  chatbotName?: string;
+  /** Demo progress: crawling | ready | failed. */
+  status?: string;
+  detail?: string;
+  /** Demo: messages visitors sent to the demo bot. */
+  messages?: number;
+  createdAt: ISODate;
 }
 
 /** Extracted visual/brand metadata of a website — powers Preview Studio's mockup fallback. */

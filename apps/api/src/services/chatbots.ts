@@ -238,11 +238,12 @@ export class ChatbotService {
     };
   }
 
-  async remove(user: UserProfile, id: string): Promise<void> {
+  async remove(user: UserProfile, id: string): Promise<ChatbotRecord> {
     const bot = await requireOwnedBot(this.store, user.uid, id);
     await this.store.deleteChatbotCascade(bot.id);
     this.retriever.invalidate(bot.id);
     this.logger.info({ chatbotId: bot.id }, 'chatbot deleted');
+    return bot;
   }
 
   /** Studio preview: draft config (+ unsaved overrides), not stored, counts usage. */

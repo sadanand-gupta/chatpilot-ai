@@ -32,7 +32,7 @@ import { ConversationsChart } from './ConversationsChart';
 
 const RANGES = [7, 30, 90] as const;
 
-function StatCard({
+export function StatCard({
   label,
   value,
   icon: Icon,

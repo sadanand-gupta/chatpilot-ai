@@ -28,6 +28,10 @@ export const LeadsPage = lazyNamed(() => import('@/features/leads/LeadsPage'), '
 export const BillingPage = lazyNamed(() => import('@/features/billing/BillingPage'), 'BillingPage');
 export const SettingsPage = lazyNamed(() => import('@/features/settings/SettingsPage'), 'SettingsPage');
 
+/* ---------- Admin console (platform admins only; the API enforces it too) ---------- */
+export const AdminPage = lazyNamed(() => import('@/features/admin/AdminPage'), 'AdminPage');
+export const AdminUserPage = lazyNamed(() => import('@/features/admin/AdminUserPage'), 'AdminUserPage');
+
 /* ---------- Studio (owned by the Studio engineer) ---------- */
 export const CreateChatbotWizard = lazyNamed(() => import('@/features/studio/CreateChatbotWizard'), 'CreateChatbotWizard');
 export const CrawlPanel = lazyNamed(() => import('@/features/studio/CrawlPanel'), 'CrawlPanel');

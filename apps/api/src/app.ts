@@ -3,14 +3,15 @@ import compression from 'compression';
 import express, { Router, type Express } from 'express';
 import helmet from 'helmet';
 import { buildContext, type AppContext, type AppDeps } from './context';
-import { requireAuth } from './middleware/auth';
+import { requireAdmin, requireAuth } from './middleware/auth';
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { createRateLimiters } from './middleware/rateLimit';
 import { accountRoutes } from './routes/account';
+import { adminConsoleRoutes } from './routes/admin';
 import { chatbotRoutes } from './routes/chatbots';
 import { publicRoutes } from './routes/public';
-import { adminRoutes, devRoutes, healthRoutes, widgetRoutes } from './routes/system';
+import { adminTokenRoutes, devRoutes, healthRoutes, widgetRoutes } from './routes/system';
 
 export interface CreatedApp {
   app: Express;
@@ -74,10 +75,14 @@ export function createApp(deps: AppDeps): CreatedApp {
   if (env.AUTH_MODE === 'dev' && env.NODE_ENV !== 'production') {
     app.use('/api/dev', devRoutes(ctx, rl), notFoundHandler);
   }
-  app.use('/api/admin', adminRoutes(ctx), notFoundHandler);
+  const auth = requireAuth(ctx.verifier, ctx.users, { adminEmails: env.ADMIN_EMAILS, activity: ctx.activity });
+
+  // Token-authenticated operator endpoints first, then the console for signed-in platform admins.
+  app.use('/api/admin', adminTokenRoutes(ctx));
+  app.use('/api/admin', auth, rl.privateUser, requireAdmin, adminConsoleRoutes(ctx), notFoundHandler);
 
   const priv = Router();
-  priv.use(requireAuth(ctx.verifier, ctx.users));
+  priv.use(auth);
   priv.use(rl.privateUser);
   priv.use(accountRoutes(ctx));
   priv.use('/chatbots', chatbotRoutes(ctx, rl));

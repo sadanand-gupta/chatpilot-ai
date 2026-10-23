@@ -18,6 +18,8 @@ export const invalidUrl = (message: string) => new AppError(400, 'invalid_url', 
 export const unauthorized = (message = 'Authentication required') => new AppError(401, 'unauthorized', message);
 export const forbidden = (message = 'You do not have access to this resource', details?: unknown) =>
   new AppError(403, 'forbidden', message, details);
+export const accountSuspended = () =>
+  new AppError(403, 'account_suspended', 'This account has been suspended. Contact support if you think this is a mistake.');
 export const notFound = (what = 'Resource') => new AppError(404, 'not_found', `${what} not found`);
 export const conflict = (message: string) => new AppError(409, 'conflict', message);
 export const rateLimited = (message = 'Too many requests, please slow down.') => new AppError(429, 'rate_limited', message);

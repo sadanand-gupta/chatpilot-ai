@@ -113,6 +113,7 @@ AI bill; or creates thousands of free accounts/demos to crawl.
 | `AI_API_KEY` | Host secret env | Provider console; set spend caps. |
 | `CONVERSATION_SECRET` | Host secret env | Rotating invalidates existing conversation tokens (visitors start new conversations). |
 | `ADMIN_TOKEN` | Host secret env; empty = admin routes disabled | Rotate anytime. |
+| `ADMIN_EMAILS` | Host env (not secret) | Admin console access. Only a *verified* Google email from the ID token counts; the stored profile is never trusted. Admins can't suspend/delete other admins or themselves from the console. |
 | `DEV_JWT_SECRET` | Dev only | API refuses dev auth in production. |
 | `VITE_FIREBASE_*` | Public by design | Restrict the browser API key in GCP Console → Credentials (HTTP referrers = your app domains; APIs = Identity Toolkit + Token Service). |
 

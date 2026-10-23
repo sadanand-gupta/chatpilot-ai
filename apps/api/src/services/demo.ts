@@ -7,6 +7,7 @@ import { newId, newPublicId } from '../lib/ids';
 import type { Logger } from '../lib/logger';
 import { defaultConfigFor, type ChatbotService } from './chatbots';
 import type { CrawlFinishedEvent, CrawlService } from './crawls';
+import { demoEventId, type ActivityService } from './activity';
 
 export const DEMO_TTL_MS = 2 * 60 * 60_000;
 
@@ -75,6 +76,7 @@ export class DemoService {
     private readonly crawls: CrawlService,
     private readonly chatbots: ChatbotService,
     private readonly logger: Logger,
+    private readonly activity?: ActivityService,
   ) {
     crawls.onFinished((e) => this.onCrawlFinished(e));
   }
@@ -102,7 +104,7 @@ export class DemoService {
     };
   }
 
-  async create(input: string, ip: string): Promise<DemoSession> {
+  async create(input: string, ip: string, userAgent?: string): Promise<DemoSession> {
     if (!this.env.DEMO_ENABLED) throw forbidden('The live demo is currently disabled.');
     const hourAgo = Date.now() - 60 * 60_000;
     this.recent = this.recent.filter((t) => t > hourAgo);
@@ -138,6 +140,18 @@ export class DemoService {
     const job = await this.crawls.start(bot, null, { url: url.href }, { queueKey: `demo:${ip}`, maxPages: this.env.DEMO_MAX_PAGES, skipQuota: true, demo: true });
     bot.demo = { ...bot.demo!, jobId: job.id };
     await this.store.updateChatbot(bot.id, { demo: bot.demo });
+    // Outlives the demo bot (deleted after DEMO_TTL_MS) so the admin console keeps the history.
+    await this.activity?.log({
+      id: demoEventId(bot.id),
+      type: 'demo_started',
+      ip,
+      userAgent,
+      url: url.href,
+      chatbotId: bot.id,
+      chatbotName: name,
+      status: 'crawling',
+      messages: 0,
+    });
     this.logger.info({ demoId: bot.id }, 'demo created');
     return this.session(bot);
   }
@@ -168,10 +182,12 @@ export class DemoService {
       }
       await this.chatbots.publishBot(bot, null);
       await this.store.updateChatbot(bot.id, { demo: { ...demo, status: 'ready' } });
+      await this.activity?.update(demoEventId(bot.id), { status: 'ready', chatbotName: bot.businessName, detail: `${demo.pagesProcessed} page${demo.pagesProcessed === 1 ? '' : 's'} read` });
     } else {
       const error =
         job.error ?? job.hint ?? (job.status === 'cancelled' ? 'The demo crawl was cancelled.' : 'We could not read enough content from this website.');
       await this.store.updateChatbot(bot.id, { demo: { ...demo, status: 'failed', error } });
+      await this.activity?.update(demoEventId(bot.id), { status: 'failed', detail: error.slice(0, 300) });
     }
   }
 }

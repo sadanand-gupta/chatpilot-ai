@@ -13,6 +13,7 @@ import { asyncHandler, paginationQuery } from '../lib/http';
 import type { RateLimiters } from '../middleware/rateLimit';
 import { validateBody } from '../middleware/validate';
 import { requireOwnedBot } from '../services/access';
+import { actorOf } from '../services/activity';
 
 export function chatbotRoutes(ctx: AppContext, rl: RateLimiters): Router {
   const r = Router();
@@ -23,7 +24,9 @@ export function chatbotRoutes(ctx: AppContext, rl: RateLimiters): Router {
   }));
 
   r.post('/', validateBody(createChatbotSchema), asyncHandler(async (req, res) => {
-    res.status(201).json(await ctx.chatbots.create(req.user!, req.body));
+    const bot = await ctx.chatbots.create(req.user!, req.body);
+    await ctx.activity.log({ type: 'chatbot_created', ...actorOf(req), chatbotId: bot.id, chatbotName: bot.name, url: bot.websiteUrl });
+    res.status(201).json(bot);
   }));
 
   r.get('/:id', asyncHandler(async (req, res) => {
@@ -35,7 +38,8 @@ export function chatbotRoutes(ctx: AppContext, rl: RateLimiters): Router {
   }));
 
   r.delete('/:id', asyncHandler(async (req, res) => {
-    await ctx.chatbots.remove(req.user!, req.params.id);
+    const bot = await ctx.chatbots.remove(req.user!, req.params.id);
+    await ctx.activity.log({ type: 'chatbot_deleted', ...actorOf(req), chatbotId: bot.id, chatbotName: bot.name, url: bot.websiteUrl });
     res.json({ ok: true });
   }));
 
@@ -44,7 +48,16 @@ export function chatbotRoutes(ctx: AppContext, rl: RateLimiters): Router {
   }));
 
   r.post('/:id/publish', asyncHandler(async (req, res) => {
-    res.json(await ctx.chatbots.publish(req.user!, req.params.id));
+    const result = await ctx.chatbots.publish(req.user!, req.params.id);
+    await ctx.activity.log({
+      type: 'chatbot_published',
+      ...actorOf(req),
+      chatbotId: result.chatbot.id,
+      chatbotName: result.chatbot.name,
+      url: result.chatbot.websiteUrl,
+      detail: `Version ${result.version}`,
+    });
+    res.json(result);
   }));
 
   r.post('/:id/unpublish', asyncHandler(async (req, res) => {

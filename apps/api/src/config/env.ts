@@ -108,6 +108,18 @@ const envSchema = z.object({
   DEMO_GLOBAL_MESSAGES_PER_DAY: int(1000, 1),
   CONVERSATION_SECRET: optStr,
   ADMIN_TOKEN: optStr,
+  /** Google accounts (verified emails) that may open the admin console. */
+  ADMIN_EMAILS: z
+    .string()
+    .default('speedolive369@gmail.com')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  /** Days the admin activity log (sign-ins, demos, …) is kept. */
+  ACTIVITY_RETENTION_DAYS: int(180, 1, 3650),
   PLANS_JSON: optStr,
   WIDGET_DIST_DIR: optStr,
   SCREENSHOT_URL_TEMPLATE: optStr,

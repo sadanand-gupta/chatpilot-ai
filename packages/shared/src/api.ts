@@ -52,16 +52,33 @@
  *   GET    /api/leads/export.csv?chatbotId=         -> text/csv   (plan feature csvExport)
  *   DELETE /api/leads/:id                           -> { ok: true }
  *
+ * ADMIN routes (signed-in platform admins only: verified email listed in ADMIN_EMAILS; others get 403)
+ *   GET    /api/admin/overview                      -> AdminOverview
+ *   GET    /api/admin/users?q=&limit=&cursor=       -> Paginated<AdminUser>
+ *   GET    /api/admin/users/:uid                    -> AdminUserDetail
+ *   PATCH  /api/admin/users/:uid  AdminUpdateUserInput -> AdminUser   (change plan, suspend/restore)
+ *   DELETE /api/admin/users/:uid                    -> { ok: true }   (deletes all their data)
+ *   GET    /api/admin/chatbots?q=&limit=&cursor=    -> Paginated<AdminChatbot>
+ *   DELETE /api/admin/chatbots/:id                  -> { ok: true }
+ *   GET    /api/admin/conversations?chatbotId=&limit=&cursor= -> Paginated<AdminConversation>
+ *   GET    /api/admin/conversations/:id             -> { conversation: AdminConversation, messages: ChatMessage[] }
+ *   GET    /api/admin/leads?limit=&cursor=          -> Paginated<AdminLead>
+ *   GET    /api/admin/activity?type=&uid=&limit=&cursor= -> Paginated<ActivityEvent>
+ *   POST   /api/admin/cleanup   (X-Admin-Token header instead of a user session; for schedulers)
+ *
  * DEV-ONLY (AUTH_MODE=dev and NODE_ENV!=production; the API refuses to start otherwise)
  *   POST   /api/dev/login   { email }               -> { token, uid, email }
  */
 
 import type {
+  ActivityEvent,
   Chatbot,
   ChatMessage,
   Conversation,
   CrawlJob,
+  Lead,
   Plan,
+  PlanId,
   PublicChatbotConfig,
   SiteMeta,
   SourceRef,
@@ -75,6 +92,8 @@ export type ApiErrorCode =
   /** Firebase email/password account whose email address isn't verified yet. */
   | 'email_not_verified'
   | 'google_sign_in_required'
+  /** A platform admin suspended this account. */
+  | 'account_suspended'
   | 'not_found'
   | 'validation_error'
   | 'quota_exceeded'
@@ -112,6 +131,66 @@ export interface MeResponse {
   user: UserProfile;
   plan: Plan;
   usage: Usage;
+  /** True for platform admins (ADMIN_EMAILS); unlocks /app/admin. */
+  isAdmin?: boolean;
+}
+
+/* ---------------- admin console (platform admins only) ---------------- */
+
+export interface AdminDailyPoint {
+  date: string;
+  signUps: number;
+  signIns: number;
+  demos: number;
+}
+
+export interface AdminOverview {
+  totals: {
+    users: number;
+    newUsers7d: number;
+    activeUsers7d: number;
+    chatbots: number;
+    publishedChatbots: number;
+    conversations: number;
+    leads: number;
+    demos7d: number;
+  };
+  /** Last 14 days, oldest first. */
+  daily: AdminDailyPoint[];
+  recentActivity: ActivityEvent[];
+}
+
+export interface AdminUser extends UserProfile {
+  isAdmin: boolean;
+  chatbotCount: number;
+  messagesThisMonth: number;
+}
+
+export interface AdminUserDetail {
+  user: AdminUser;
+  plan: Plan;
+  usage: Usage;
+  chatbots: Chatbot[];
+  activity: ActivityEvent[];
+}
+
+export interface AdminChatbot extends Chatbot {
+  ownerEmail?: string;
+}
+
+export interface AdminConversation extends Conversation {
+  chatbotName?: string;
+  ownerEmail?: string;
+}
+
+export interface AdminLead extends Lead {
+  chatbotName?: string;
+  ownerEmail?: string;
+}
+
+export interface AdminUpdateUserInput {
+  planId?: PlanId;
+  suspended?: boolean;
 }
 
 export interface PublicChatReply {
